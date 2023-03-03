@@ -3,25 +3,21 @@ project:
   output-dir: docs
 
 website:
-  title: "My Awesome CSCI 0451 Blog"
-  output-dir: docs
+  title: "CS451 Course Blog"
   navbar:
     background: "#112a39"
     right:
       - about.qmd
       - icon: github
-        href: https://github.com/
+        href: https://github.com/Nicholas-Sliter
       - icon: twitter
-        href: https://twitter.com
-
+        href: https://twitter.com/Nicholas_Sliter
 format:
   html:
     title-block-banner: img/landscape.png
     title-block-banner-color: white
     theme: cosmo
     css: styles.css
-
-
 
 
 
