@@ -215,6 +215,7 @@ background-size: cover;
 
 
 
+<p>Source <a href="https://github.com/Nicholas-Sliter/middlebury-csci-0451/blob/main/posts/logistic-regression-and-gradient-descent/LogisticRegression.py">LogisticRegression.py</a></p>
 <p>This blog post outlines an implementation of linear classification via logistic regression with gradient descent, stochastic gradient descent, and stochastic gradient descent with momentum. I will address the implementations and differing convergence rates of each method.</p>
 <p>Logistic Regression is based around the sigmoid function, a convex function defined as: <span class="math display">\[\sigma(x) = \frac{1}{1 + e^{-x}}\]</span>.</p>
 <p>Using numpy, we define a vectorized sigmoid function as:</p>
@@ -814,9 +815,16 @@ Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre
 </div>
 </div>
 <p>Observe how the model exiting in 13 epochs. If <span class="math inline">\(\epsilon\)</span> is too large, the model will exit before it has converged to the actual minimizer. This is bad. In general, we want to set <span class="math inline">\(\epsilon\)</span> to a small value.</p>
-
-
 </section>
+</section>
+<section id="sources" class="level2">
+<h2 class="anchored" data-anchor-id="sources">Sources:</h2>
+<ul>
+<li>[1] <a href="https://towardsdatascience.com/activation-functions-neural-networks-1cbd9f8d91d6">Sigmoid Image</a></li>
+<li>[2] <a href="https://stats.stackexchange.com/questions/562637/can-gradient-descent-bounce-around-forever">Alpha Overshoot Image</a></li>
+</ul>
+
+
 </section>
 </section>
 
