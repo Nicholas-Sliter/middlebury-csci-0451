@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/logistic-regression-and-gradient-descent/index.html",
       "/posts/perceptron/index.html"
     ]
   }

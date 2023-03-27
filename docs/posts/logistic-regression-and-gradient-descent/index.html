@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.189">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Nicholas Sliter">
+<meta name="dcterms.date" content="2023-03-27">
+<meta name="description" content="Exploring logistic regression and gradient descent">
+
+<title>CS451 Course Blog - Logistic Regression &amp; Gradient Descent</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>
+    .quarto-title-block .quarto-title-banner {
+      color: white;
+background-image: url(../../img/landscape.png);
+background-size: cover;
+    }
+    </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">CS451 Course Blog</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">About</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/Nicholas-Sliter"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/Nicholas_Sliter"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Logistic Regression &amp; Gradient Descent</h1>
+                  <div>
+        <div class="description">
+          Exploring logistic regression and gradient descent
+        </div>
+      </div>
+                </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Nicholas Sliter </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 27, 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<p>This blog post outlines an implementation of linear classification via logistic regression with gradient descent, stochastic gradient descent, and stochastic gradient descent with momentum. I will address the implementations and differing convergence rates of each method.</p>
+<p>Logistic Regression is based around the sigmoid function, a convex function defined as: <span class="math display">\[\sigma(x) = \frac{1}{1 + e^{-x}}\]</span>.</p>
+<p>Using numpy, we define a vectorized sigmoid function as:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> __sigmoid(<span class="va">self</span>, z) <span class="op">-&gt;</span> np.ndarray:</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">''' Internal method to calculate sigmoid</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">        @param z: array of shape (n_samples,)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">        @return: array of shape (n_samples,)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">        '''</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>z))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="gradient-descent" class="level1">
+<h1>Gradient Descent</h1>
+<p>This leads to the logistic loss function given in code as:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> __loss(<span class="va">self</span>, X, y) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">''' Internal method to calculate logistic loss</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">        @param y: array of shape (n_samples,)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">        @param y_pred: array of shape (n_samples,)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">        @return: float</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">        '''</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        y_pred <span class="op">=</span> <span class="va">self</span>.__predict(X)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.__np_array_is_empty_or_null(y) <span class="kw">or</span> <span class="va">self</span>.__np_array_is_empty_or_null(y_pred): <span class="cf">raise</span> <span class="pp">Exception</span>(<span class="st">'y and y_pred must not be empty'</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(y) <span class="op">!=</span> <span class="bu">len</span>(y_pred): <span class="cf">raise</span> <span class="pp">Exception</span>(<span class="st">'y and y_pred must have same length'</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="op">-</span>y<span class="op">*</span>np.log(<span class="va">self</span>.__sigmoid(y_pred)) <span class="op">-</span> (<span class="dv">1</span><span class="op">-</span>y)<span class="op">*</span>np.log(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.__sigmoid(y_pred))).mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>As we can see, this vectorized loss function is a convex function between the model’s predictions and the true labels. This is important because it allows us to use gradient descent to find a global minimum for our model’s overall cost (given by the mean of the individual loss calculations). The gradient of the loss function is given by:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> __grad(<span class="va">self</span>, X, y, y_pred) <span class="op">-&gt;</span> np.ndarray:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">''' Internal method to calculate gradient of empirical risk of logistic loss</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">        @param X: array of shape (n_samples, n_features + 1)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">        @param y: array of shape (n_samples,)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">        @param y_pred: array of shape (n_samples,)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">        @return: array of shape (n_features + 1,)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">        '''</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="dv">1</span> <span class="op">/</span> <span class="bu">len</span>(y)) <span class="op">*</span> ((<span class="va">self</span>.__sigmoid(y_pred) <span class="op">-</span> y) <span class="op">@</span> X)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>These calculations perform the legwork of our gradient descent algorithm. We can now define the (simplest) gradient descent algorithm itself as: <span class="math display">\[ w_{i+1} = w_{i} - \nabla L(w) \]</span></p>
+<section id="learning-rate" class="level2">
+<h2 class="anchored" data-anchor-id="learning-rate">Learning Rate</h2>
+<p>Now naturally, we’d like our algorithm to converge to a global minimum. And as it stands, this is not guaranteed. We can however, make it more likely by using a learning rate <span class="math inline">\(\alpha \in (0,1)\)</span> to control the step size of our gradient descent algorithm. The intuition behind this is that if we take a step in the direction of the gradient, we will move closer to the global minimum. But if we step too far, we may overshoot the global minimum and end up somewhere worse.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./images/gradient-alpha-overshoot.png" class="img-fluid figure-img"></p>
+<p></p><figcaption class="figure-caption">When alpha is too large we can bounce around the global minimum and never reach it. <a href="https://stats.stackexchange.com/q/562637/">stats.stackexchange.com</a></figcaption><p></p>
+</figure>
+</div>
+<p>By making smaller steps, we decrease the likelihood of overshooting the global minimum. By sufficiently decreasing our step size, we can guarantee convergence at the cost of training time. Our new gradient descent algorithm is given as:</p>
+<p><span class="math display">\[ w_{i+1} = w_{i} - \alpha \nabla L(w) \]</span></p>
+</section>
+<section id="stochastic-gradient-descent" class="level2">
+<h2 class="anchored" data-anchor-id="stochastic-gradient-descent">Stochastic Gradient Descent</h2>
+<p>This equation can be quite costly to compute, especially if we have a large number of samples. We can reduce the cost of this computation by using a batch <span class="math inline">\(b\)</span> to compute the gradient of the loss function over a subset of the data. The intuition behind this is that the gradient of the loss function over a subset of the data is probably a good approximation of the gradient of the loss function over the entire dataset. And taking a step in the direction of this approximation should bring us closer to the global minimum.</p>
+<p>This is known as stochastic gradient descent. The new algorithm is given as:</p>
+<p><span class="math display">\[ w_{i+1} = w_{i} - \alpha \nabla L(w)_b \]</span></p>
+<p>where <span class="math inline">\(b\)</span> is a random subset of the data. Then we can iterate over the entire dataset by repeating this process for each batch.</p>
+</section>
+<section id="stochastic-gradient-descent-with-momentum" class="level2">
+<h2 class="anchored" data-anchor-id="stochastic-gradient-descent-with-momentum">Stochastic Gradient Descent with Momentum</h2>
+<p>The problem with stochastic gradient descent is that it can be noisy. This is because we are taking a step in the direction of the gradient of the loss function over a random subset of the data. This can lead to the algorithm taking certain steps that are orthogonal or even opposite to the direction of the global minimum, and thus increase the noise at each step and increasing training time. We can reduce this noise by using momentum. The idea behind momentum is that we can keep track of the direction of the previous step and use this to help us take a step in the right direction. We can do this by adding a momentum term to our gradient descent algorithm, where <span class="math inline">\(\beta \in (0,1)\)</span> is the momentum coefficient. This gives us the following equation:</p>
+<p><span class="math display">\[ w_{i+1} = w_{i} - (\alpha \nabla L(w)_b + \beta (w_{i} - w_{i-1})) \]</span></p>
+</section>
+<section id="gradient-descent-implementations" class="level2">
+<h2 class="anchored" data-anchor-id="gradient-descent-implementations">Gradient Descent Implementations</h2>
+<p>For ease of implementation, gradient descent and its stochastic variants are implemented in two functions <code>LogisticRegression.fit</code> and <code>LogisticRegression.fit_stochastic</code>.</p>
+<p><code>LogisticRegression.fit_stochastic</code> handles both stochastic gradient descent and stochastic gradient descent with momentum. As only difference between the two is the addition of the momentum term.</p>
+<p>We define our model fit via gradient descent as:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> __fit(<span class="va">self</span>, X, y, alpha, epochs) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        <span class="co">''' Internal method to fit the model</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">        @param X: array of shape (n_samples, n_features + 1)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">        @param y: array of shape (n_samples,)</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">        @param alpha: learning rate</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">        @param epochs: number of epochs</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">        @return: None</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">        '''</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.w <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>: <span class="cf">raise</span> <span class="pp">Exception</span>(<span class="st">'Model is already trained'</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        _, n_features <span class="op">=</span> X.shape</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.w <span class="op">=</span> <span class="va">self</span>.__get_random_weights(n_features)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.__record_history(<span class="va">self</span>.__loss(X, y), <span class="va">self</span>.__score(X, y))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> epoch <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            y_pred <span class="op">=</span> <span class="va">self</span>.__predict(X)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Update weights       </span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>            grad <span class="op">=</span> <span class="va">self</span>.__grad(X, y, y_pred)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>            update_amt  <span class="op">=</span> (alpha <span class="op">*</span> grad)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.w <span class="op">-=</span> update_amt</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Record loss and check for convergence</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">=</span> <span class="va">self</span>.__loss(X, y)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>            score <span class="op">=</span> <span class="va">self</span>.__score(X, y)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.__record_history(loss, score)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (np.linalg.norm(update_amt) <span class="op">&lt;=</span> <span class="va">self</span>.epsilon): <span class="cf">break</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Fit model with gradient descent in </span><span class="sc">{</span>epoch<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>epochs<span class="sc">}</span><span class="ss">(max) epochs."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The code for this follows from the above equation. We initialize our weights to random values, and then update them using the gradient of the loss function. We then record the loss and score of the model and check for convergence. If the model has converged, we break out of the loop. Otherwise, we continue to the next epoch.</p>
+<p>We do this until convergence or until we reach the maximum number of epochs.</p>
+<p>Similarly, we define our model fit via stochastic gradient descent as:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">def</span> __fit_stochastic(<span class="va">self</span>, X, y, alpha, epochs, batch_size, momentum<span class="op">=</span><span class="va">False</span>, beta<span class="op">=</span><span class="fl">0.8</span>) <span class="op">-&gt;</span> <span class="va">None</span>:</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="co">''' Internal method to fit the model using stochastic gradient descent</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">        @param X: array of shape (n_samples, n_features + 1)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">        @param y: array of shape (n_samples,)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">        @param alpha: learning rate</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">        @param epochs: number of epochs</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">        @param batch_size: size of batch</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">        @param momentum: boolean to use momentum</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">        @return: None</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">        '''</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        beta: <span class="bu">float</span> <span class="op">=</span> <span class="dv">1</span><span class="op">*</span>(momentum<span class="op">*</span>beta) <span class="co"># 0 when momentum is false</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.w <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>: <span class="cf">raise</span> <span class="pp">Exception</span>(<span class="st">'Model is already trained'</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        n, n_features <span class="op">=</span> X.shape</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.w <span class="op">=</span> <span class="va">self</span>.__get_random_weights(n_features)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.__record_history(<span class="va">self</span>.__loss(X, y), <span class="va">self</span>.__score(X, y))</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> epoch <span class="kw">in</span> np.arange(epochs):</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>            order <span class="op">=</span> np.arange(n)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.__rs.shuffle(order)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>            previous_update_vector <span class="op">=</span> np.zeros(n_features)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> batch <span class="kw">in</span> np.array_split(order, n <span class="op">//</span> batch_size <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>                x_batch <span class="op">=</span> X[batch,:]</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>                y_batch <span class="op">=</span> y[batch]</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>                y_batch_pred <span class="op">=</span> <span class="va">self</span>.__predict(x_batch)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>                grad <span class="op">=</span> <span class="va">self</span>.__grad(x_batch, y_batch, y_batch_pred) </span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Stochastic Gradient step with optional momentum</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>                momentum_term <span class="op">=</span>  (beta <span class="op">*</span> (previous_update_vector))</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>                update_vector <span class="op">=</span> (alpha <span class="op">*</span> grad) <span class="op">+</span> momentum_term</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>                previous_update_vector <span class="op">=</span> update_vector</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.w <span class="op">-=</span> update_vector</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Record loss and check for convergence</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">=</span> <span class="va">self</span>.__loss(X, y)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>            score <span class="op">=</span> <span class="va">self</span>.__score(X, y)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.__record_history(loss, score)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (np.linalg.norm(previous_update_vector) <span class="op">&lt;=</span> <span class="va">self</span>.epsilon): <span class="cf">break</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Fit model with stochastic gradient descent in </span><span class="sc">{</span>epoch<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>epochs<span class="sc">}</span><span class="ss">(max) epochs."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Here we can see the subtle difference between gradient descent and its stochastic variants. We initialize our weights to random values, and then update them using the gradient of the loss function over a random subset of the data. We repeat until we have processed the entire dataset. Then, we repeat this process for the number of epochs. At the end of each epoch, we record the loss and score of the model and check for convergence. If the model has converged, we break out of the loop. Otherwise, we continue to the next epoch (and each batch within).</p>
+<p>We define our momentum coefficient as <code>beta = 0.8</code> which is a common convention.</p>
+</section>
+</section>
+<section id="implementation-results" class="level1">
+<h1>Implementation &amp; Results</h1>
+<p>Now that we’ve explored the mathematical foundations of logistic regression (and a little bit of code), let’s take a deeper dive into this simple implementation of logistic regression.</p>
+<p>We will start by importing the necessary libraries and defining a sample dataset. We will use the familiar <code>make_blobs</code> function from <code>sklearn.datasets</code> to generate a dataset with 2 features and 2 classes.</p>
+<div class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create dataset</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>features <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> make_blobs(n_samples<span class="op">=</span><span class="dv">800</span>, centers<span class="op">=</span>[(<span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>), (<span class="dv">1</span>, <span class="dv">1</span>)], n_features<span class="op">=</span>features<span class="op">-</span><span class="dv">1</span>, random_state<span class="op">=</span>seed)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.scatter(X[:,<span class="dv">0</span>], X[:,<span class="dv">1</span>], c <span class="op">=</span> y)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>xlab <span class="op">=</span> plt.xlabel(<span class="st">"Feature 1"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>ylab <span class="op">=</span> plt.ylabel(<span class="st">"Feature 2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-3-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>From here we can examine the performance of our simplest implementation of logistic regression. We will use the <code>LogisticRegression</code> class defined in our source files.</p>
+<p>Note: our <code>LogisticRegression</code> class is seeded. This allows us to directly compare the results of our various implementations.</p>
+<p>We will use the <code>fit</code> method to fit our model to the data using normal gradient descent. We can use the <code>predict</code> method to make predictions on future data. And we can use the <code>score</code> method to evaluate the accuracy of our model.</p>
+<div class="cell" data-execution_count="48">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> LogisticRegression <span class="im">import</span> LogisticRegression</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create model</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression(epsilon<span class="op">=</span><span class="fl">1e-3</span>, seed<span class="op">=</span>seed)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit model</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>LR.fit(X, y, alpha<span class="op">=</span><span class="fl">0.1</span>, epochs<span class="op">=</span><span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with gradient descent in 390/1000(max) epochs.</code></pre>
+</div>
+</div>
+<p>We can access the loss and accuracy history of our model using the <code>loss_history</code> and <code>score_history</code> attributes. We can also access the weights of our model using the <code>w</code> attribute.</p>
+<div class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final weights are: </span><span class="sc">{</span>LR<span class="sc">.</span>w<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Final weights are: [1.70105767 1.77488985 0.0742251 ]</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="39">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final score is: </span><span class="sc">{</span>LR<span class="sc">.</span>score_history[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final loss is: </span><span class="sc">{</span>LR<span class="sc">.</span>loss_history[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Final score is: 0.925
+Final loss is: 0.194</code></pre>
+</div>
+</div>
+<p>It would be nice to visualize the decisions our model is making. Doing this will show us where errors are being made. We will call the <code>LR.predict(X)</code> method to get the predicted class for each sample in our dataset. We will then plot the correctness of each prediction on a scatter plot.</p>
+<div class="cell" data-execution_count="59">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>y_preds <span class="op">=</span> LR.predict(X)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>correctness <span class="op">=</span> <span class="dv">1</span><span class="op">*</span>np.equal(y_preds, y)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>correct_points <span class="op">=</span> X[correctness <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>incorrect_points <span class="op">=</span> X[correctness <span class="op">==</span> <span class="dv">0</span>]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co"># fig = plt.scatter(X[:,0], X[:,1], c = correctness)</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.scatter(correct_points[:,<span class="dv">0</span>], correct_points[:,<span class="dv">1</span>], c <span class="op">=</span> <span class="st">'grey'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.scatter(incorrect_points[:,<span class="dv">0</span>], incorrect_points[:,<span class="dv">1</span>], c <span class="op">=</span> <span class="st">'red'</span>, marker<span class="op">=</span><span class="st">"x"</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>xlab <span class="op">=</span> plt.xlabel(<span class="st">"Feature 1"</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>ylab <span class="op">=</span> plt.ylabel(<span class="st">"Feature 2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-7-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Here, red points indicate the incorrect predictions, and the grey points indicate the correct predictions. We can see that our model is making some mistakes, but it is still able to make correct predictions. We can also see that our model is not able to separate the two classes perfectly. This is because our model is linear, and the data is not linearly separable. Notice how the errors are concentrated along a line through the middle of the plot.</p>
+<p>The decision boundary of our model is the linear boundary that separates the two classes. This visualization of errors indirectly reveals the location of this boundary.</p>
+<p>Using the excellent <code>mlxtend</code> library, we can precisely plot the decision boundary of our model.</p>
+<div class="cell" data-execution_count="41">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mlxtend.plotting <span class="im">import</span> plot_decision_regions</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_decision_regions(X, y, clf<span class="op">=</span>LR, legend<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>xlab <span class="op">=</span> plt.xlabel(<span class="st">"Feature 1"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>ylab <span class="op">=</span> plt.ylabel(<span class="st">"Feature 2"</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Now that we have a basic understanding of how our model works, let’s see how it works with its stochastic variants. We will start with stochastic gradient descent without momentum.</p>
+<p>Like before, we instantiate our model with the <code>LogisticRegression</code> class. We will use the <code>fit_stochastic</code> method to fit our model to the data using stochastic gradient descent. Then we can use the familiar <code>predict</code>, <code>score</code>, <code>loss_history</code>, <code>score_history</code>, and <code>w</code> attributes to examine the model.</p>
+<div class="cell" data-execution_count="54">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>LRS <span class="op">=</span> LogisticRegression(epsilon<span class="op">=</span><span class="fl">1e-3</span>, seed<span class="op">=</span>seed)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit model with stochastic gradient descent</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>LRS.fit_stochastic(X, y, alpha<span class="op">=</span><span class="fl">0.1</span>, batch_size<span class="op">=</span><span class="dv">50</span>, epochs<span class="op">=</span><span class="dv">1000</span>, momentum<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with stochastic gradient descent in 48/1000(max) epochs.</code></pre>
+</div>
+</div>
+<p>Note how the stochastic variant converged to a solution in ~50 epochs, while the normal variant took ~400 (8x speedup!). This is because the stochastic variant is able to make updates to the model <span class="math inline">\(\frac{n}{b}\)</span> times per epoch where <span class="math inline">\(n\)</span> is the number of points and <span class="math inline">\(b\)</span> is the batch size. This allows it to converge to a solution faster than the normal variant which only makes updates once per epoch.</p>
+<p>Plotting the loss history of our model shows us how quickly the stochastic variant converges to a solution.</p>
+<div class="cell" data-execution_count="57">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.plot(LRS.loss_history)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>xlab <span class="op">=</span> plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>ylab <span class="op">=</span> plt.ylabel(<span class="st">"Loss"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>The introduction of momentum adds a subtle improvement to our stochastic gradient descent. To show this, we will use the <code>fit_stochastic</code> method with the <code>momentum</code> parameter set to <code>True</code>.</p>
+<div class="cell" data-execution_count="63">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>LRSM <span class="op">=</span> LogisticRegression(epsilon<span class="op">=</span><span class="fl">1e-3</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit model with stochastic gradient descent</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>LRSM.fit_stochastic(X, y, alpha<span class="op">=</span><span class="fl">0.1</span>, batch_size<span class="op">=</span><span class="dv">50</span>, epochs<span class="op">=</span><span class="dv">1000</span>, momentum<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with stochastic gradient descent in 183/1000(max) epochs.</code></pre>
+</div>
+</div>
+<p>We can see that the stochastic variant with momentum converges to a solution in ~200 epochs, which is unexpected since we expect the stochastic gradient descent with momentum to converge faster than the stochastic variant without momentum.</p>
+<p>Plotting the loss history of our model shows us that the stochastic variant with momentum gets close to converging to a solution very quickly but does not quite reach the epsilon threshold we set for convergence.</p>
+<p>If we overlay the loss history of the stochastic variant with momentum and the stochastic variant without momentum, we can see that the stochastic variant with momentum reduces its loss more quickly than the stochastic variant without momentum.</p>
+<div class="cell" data-execution_count="70">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>lrs_loss_history <span class="op">=</span> LRS.loss_history</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>lrsm_loss_history <span class="op">=</span> LRSM.loss_history</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.plot(lrs_loss_history, label<span class="op">=</span><span class="st">"Stochastic Gradient Descent"</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.plot(lrsm_loss_history, label<span class="op">=</span><span class="st">"Stochastic Gradient Descent with momentum"</span>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>xlab <span class="op">=</span> plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>ylab <span class="op">=</span> plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> plt.gca()</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># To suppress Matplotlib output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>So our expectations are actually correct. The stochastic variant with momentum does get close to the solution at a faster rate, however, it does not quite reach convergence as quickly as the stochastic variant without momentum.</p>
+<p>Now, let’s directly compare the performance of all three types of gradient descent. The following code will fit each of our models to the data and plot the loss history of each model.</p>
+<div class="cell" data-execution_count="76">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>y_scale <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>LR.fit_stochastic(X, y, </span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>                  epochs <span class="op">=</span> <span class="dv">1000</span>, </span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>                  momentum <span class="op">=</span> <span class="va">True</span>, </span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>                  batch_size <span class="op">=</span> <span class="dv">50</span>, </span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>                  alpha <span class="op">=</span> <span class="fl">.1</span>) </span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR.loss_history)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR.loss_history, label <span class="op">=</span> <span class="st">"stochastic gradient (momentum)"</span>)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>LR.fit_stochastic(X, y, </span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>                  epochs <span class="op">=</span> <span class="dv">1000</span>, </span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>                  momentum <span class="op">=</span> <span class="va">False</span>, </span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>                  batch_size <span class="op">=</span> <span class="dv">50</span>, </span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>                  alpha <span class="op">=</span> <span class="fl">.1</span>)</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR.loss_history)</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR.loss_history, label <span class="op">=</span> <span class="st">"stochastic gradient"</span>)</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>LR.fit(X, y, alpha <span class="op">=</span> <span class="fl">.1</span>, epochs <span class="op">=</span> <span class="dv">1000</span>)</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR.loss_history)</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR.loss_history, label <span class="op">=</span> <span class="st">"gradient"</span>)</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>plt.loglog()</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>legend <span class="op">=</span> plt.legend() </span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>ax<span class="op">=</span> plt.gca()</span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># To suppress Matplotlib output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with stochastic gradient descent in 1000/1000(max) epochs.
+Fit model with stochastic gradient descent in 1000/1000(max) epochs.
+Fit model with gradient descent in 1000/1000(max) epochs.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-19-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<p>This example exemplifies our earlier points about the training times of each type of algorithm. We observe the stochastic variants “converge” onto a solution much faster than the normal variant. And the stochastic variant with momentum converges to a solution faster than the stochastic variant without momentum.</p>
+<section id="examples" class="level2">
+<h2 class="anchored" data-anchor-id="examples">Examples:</h2>
+<section id="example-1-large-alpha-leading-to-divergence" class="level3">
+<h3 class="anchored" data-anchor-id="example-1-large-alpha-leading-to-divergence">Example 1: Large alpha leading to divergence</h3>
+<p>Consider the following example where we set the learning rate to a large value. As earlier claimed, this can lead to divergence of the model.</p>
+<p>We will test this claim on the <code>make_moons</code> dataset from <code>sklearn.datasets</code>. This dataset is not linearly separable.</p>
+<div class="cell" data-execution_count="80">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: alpha too large</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_moons</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>X_dnc, y_dnc <span class="op">=</span> make_moons(n_samples<span class="op">=</span><span class="dv">400</span>, noise<span class="op">=</span><span class="fl">0.15</span>, random_state<span class="op">=</span>seed)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.scatter(X_dnc[:,<span class="dv">0</span>], X_dnc[:,<span class="dv">1</span>], c <span class="op">=</span> y_dnc)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># To suppress Matplotlib output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-20-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>We will fit our model using normal gradient descent. We will set the learning rate to the obscenely large value of 29. Observe how the loss history of our model fails to converge to a solution over the course of 2000 epochs.</p>
+<div class="cell" data-execution_count="89">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression()</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>LR.fit(X_dnc, y_dnc, alpha <span class="op">=</span> <span class="dv">29</span>, epochs <span class="op">=</span> <span class="dv">2000</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR.loss_history)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR.loss_history, label <span class="op">=</span> <span class="st">"gradient"</span>)</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>plt.loglog()</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>legend <span class="op">=</span> plt.legend()</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>ax<span class="op">=</span> plt.gca()</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># To suppress Matplotlib output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with gradient descent in 2000/2000(max) epochs.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-21-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<p>So clearly the model is not going to converge. But maybe this is just a fluke. Let’s try again with a smaller learning rate. We will set the learning rate to 0.1. This is a reasonable value for a learning rate. Observe how the loss history of our model converges to a solution over the course of 2000 epochs.</p>
+<div class="cell" data-execution_count="90">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>LR2 <span class="op">=</span> LogisticRegression()</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>LR2.fit(X_dnc, y_dnc, alpha <span class="op">=</span> <span class="fl">0.1</span>, epochs <span class="op">=</span> <span class="dv">2000</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR2.loss_history)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR.loss_history, label <span class="op">=</span> <span class="st">"gradient (alpha = 29)"</span>)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR2.loss_history, label <span class="op">=</span> <span class="st">"gradient (alpha = 0.1)"</span>)</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>plt.loglog()</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>legend <span class="op">=</span> plt.legend()</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>ax<span class="op">=</span> plt.gca()</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># To suppress Matplotlib output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with gradient descent in 2000/2000(max) epochs.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-22-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="example-2-batch-size-convergence-speed" class="level3">
+<h3 class="anchored" data-anchor-id="example-2-batch-size-convergence-speed">Example 2: Batch size &amp; convergence speed</h3>
+<p>With stochastic gradient descent, we can control the convergence speed of our model by adjusting the batch size. Again, we will test this claim on the <code>make_moons</code> dataset from <code>sklearn.datasets</code>. This dataset is not linearly separable.</p>
+<p>Using two models of stochastic gradient descent with momentum with differing batch sizes (20 and 100), we will show that the batch size controls the convergence speed of the model.</p>
+<div class="cell" data-execution_count="21">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Batch size influencing convergence time</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>LR20 <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>LR20.fit_stochastic(X, y, alpha <span class="op">=</span> <span class="fl">0.05</span>, epochs <span class="op">=</span> <span class="dv">1000</span>, momentum <span class="op">=</span> <span class="va">True</span>, batch_size <span class="op">=</span> <span class="dv">20</span>)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>LR100 <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>LR100.fit_stochastic(X, y, alpha <span class="op">=</span> <span class="fl">0.05</span>, epochs <span class="op">=</span> <span class="dv">1000</span>, momentum <span class="op">=</span> <span class="va">True</span>, batch_size <span class="op">=</span> <span class="dv">100</span>)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot loss history</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR20.loss_history)</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR20.loss_history, label <span class="op">=</span> <span class="st">"batch size = 20"</span>)</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR100.loss_history, label <span class="op">=</span> <span class="st">"batch size = 100"</span>)</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>legend <span class="op">=</span> plt.legend()</span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>plt.loglog()</span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a>ax<span class="op">=</span> plt.gca()</span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with stochastic gradient descent in 1000/1000(max) epochs.
+Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-24-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Observe how the model with a smaller batch size (20) converges to a solution much faster than the model with a larger batch size (100). This is because the model with a smaller batch size makes more updates per epoch than the model with a larger batch size.</p>
+<p>This does not mean small sizes are always better. For example, if we use a batch size of 2, the model can bounce around our minimizer and not converge to a solution. This is because the model with a batch size of 2 makes worse average approximations to the gradient. And such a small sample size would be very noisy.</p>
+<p>Observe that the model with a batch size of 2 leads to a noisy loss history.</p>
+<div class="cell" data-execution_count="93">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Batch size influencing convergence time</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>LR20 <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>LR20.fit_stochastic(X, y, alpha <span class="op">=</span> <span class="fl">0.05</span>, epochs <span class="op">=</span> <span class="dv">1000</span>, momentum <span class="op">=</span> <span class="va">True</span>, batch_size <span class="op">=</span> <span class="dv">20</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>LR1 <span class="op">=</span> LogisticRegression(seed<span class="op">=</span>seed)</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>LR1.fit_stochastic(X, y, alpha <span class="op">=</span> <span class="fl">0.05</span>, epochs <span class="op">=</span> <span class="dv">1000</span>, momentum <span class="op">=</span> <span class="va">True</span>, batch_size <span class="op">=</span> <span class="dv">2</span>)</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot loss history</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR20.loss_history)</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR20.loss_history, label <span class="op">=</span> <span class="st">"batch size = 20"</span>)</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR1.loss_history, label <span class="op">=</span> <span class="st">"batch size = 2"</span>)</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>legend <span class="op">=</span> plt.legend()</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>plt.loglog()</span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>ax<span class="op">=</span> plt.gca()</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with stochastic gradient descent in 1000/1000(max) epochs.
+Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-25-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="example-3-sgd-with-momentum-speeding-up-convergence-on-high-dimensional-data" class="level3">
+<h3 class="anchored" data-anchor-id="example-3-sgd-with-momentum-speeding-up-convergence-on-high-dimensional-data">Example 3: SGD with momentum speeding up convergence on high dimensional data</h3>
+<p>We will show that stochastic gradient descent with momentum can speed up convergence on high dimensional data. We will use the <code>make_blobs</code> dataset from <code>sklearn.datasets</code> to generate a dataset with 10 features and 2 classes. We use a large sample size of 40,000 observations.</p>
+<div class="cell" data-execution_count="22">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: momentum leading to faster convergence</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>epochs <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.01</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>np.random.seed(seed)</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>n_features <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>centers <span class="op">=</span> [[<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>], [<span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>]]</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>X_m, y_m <span class="op">=</span> make_blobs(n_samples<span class="op">=</span><span class="dv">40000</span>, n_features<span class="op">=</span>n_features, centers<span class="op">=</span>centers, random_state<span class="op">=</span>seed, cluster_std<span class="op">=</span><span class="fl">1.8</span>)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression(seed)</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>LR.fit(X_m, y_m, alpha <span class="op">=</span> alpha, epochs <span class="op">=</span> epochs)</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>LRS <span class="op">=</span> LogisticRegression(seed)</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>LRS.fit_stochastic(X_m, y_m, alpha <span class="op">=</span> alpha, epochs <span class="op">=</span> epochs, momentum <span class="op">=</span> <span class="va">False</span>, batch_size <span class="op">=</span> <span class="dv">2000</span>)</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>LRM <span class="op">=</span> LogisticRegression(seed)</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>LRM.fit_stochastic(X_m, y_m, alpha <span class="op">=</span> alpha, epochs <span class="op">=</span> epochs, momentum <span class="op">=</span> <span class="va">True</span>, batch_size <span class="op">=</span> <span class="dv">2000</span>)</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>num_steps <span class="op">=</span> <span class="bu">len</span>(LR.loss_history)</span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LR.loss_history, label <span class="op">=</span> <span class="st">"GD"</span>)</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LRS.loss_history, label <span class="op">=</span> <span class="st">"SGD, no momentum"</span>)</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(num_steps) <span class="op">+</span> <span class="dv">1</span>, LRM.loss_history, label <span class="op">=</span> <span class="st">"SGD, momentum"</span>)</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>legend <span class="op">=</span> plt.legend()</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Epoch"</span>)</span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Loss"</span>)</span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>plt.loglog()</span>
+<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>ax<span class="op">=</span> plt.gca()</span>
+<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with gradient descent in 1000/1000(max) epochs.
+Fit model with stochastic gradient descent in 1000/1000(max) epochs.
+Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-26-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Here we observe the significant speedup offered by stochastic gradient descent with momentum. The stochastic variant with momentum converges to a solution in ~100 epochs, while the stochastic variant without momentum converges to a solution in ~1000 epochs. And the normal variant converges to a solution in &gt;10,000 epochs.</p>
+</section>
+<section id="example-4-large-epsilon-leading-to-early-exit" class="level3">
+<h3 class="anchored" data-anchor-id="example-4-large-epsilon-leading-to-early-exit">Example 4: Large epsilon leading to early exit</h3>
+<p>Consider the following example where we set the epsilon threshold to a large value (0.01).</p>
+<div class="cell" data-execution_count="94">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: large epsilon leading to early exit</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>epochs <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.05</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>epilson <span class="op">=</span> <span class="fl">0.01</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>kwargs <span class="op">=</span> {<span class="st">"seed"</span>: seed, <span class="st">"epsilon"</span>: epilson}</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression(<span class="op">**</span>kwargs)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>LR.fit(X, y, alpha <span class="op">=</span> alpha, epochs <span class="op">=</span> epochs)</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a><span class="co"># LR.score(X, y)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fit model with gradient descent in 13/1000(max) epochs.</code></pre>
+</div>
+</div>
+<p>Observe how the model exiting in 13 epochs. If <span class="math inline">\(\epsilon\)</span> is too large, the model will exit before it has converged to the actual minimizer. This is bad. In general, we want to set <span class="math inline">\(\epsilon\)</span> to a small value.</p>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
