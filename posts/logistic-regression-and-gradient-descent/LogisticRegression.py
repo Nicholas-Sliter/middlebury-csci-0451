@@ -146,7 +146,7 @@ class LogisticRegression:
         @return: array of shape (n_features + 1,)
         '''
 
-        return (1 / len(y)) * ((self.__sigmoid(y_pred) - y) @ X)
+        return (1 / len(y)) * np.dot((self.__sigmoid(y_pred) - y),X)
 
     def __record_history(self, loss, score) -> None:
         ''' Internal method to record loss and score history
