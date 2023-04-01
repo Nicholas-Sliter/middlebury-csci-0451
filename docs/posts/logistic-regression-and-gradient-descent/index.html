@@ -251,7 +251,7 @@ background-size: cover;
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">        @return: array of shape (n_features + 1,)</span></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">        '''</span></span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="dv">1</span> <span class="op">/</span> <span class="bu">len</span>(y)) <span class="op">*</span> ((<span class="va">self</span>.__sigmoid(y_pred) <span class="op">-</span> y) <span class="op">@</span> X)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="dv">1</span> <span class="op">/</span> <span class="bu">len</span>(y)) <span class="op">*</span> np.dot((<span class="va">self</span>.__sigmoid(y_pred) <span class="op">-</span> y), X)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>These calculations perform the legwork of our gradient descent algorithm. We can now define the (simplest) gradient descent algorithm itself as: <span class="math display">\[ w_{i+1} = w_{i} - \nabla L(w) \]</span></p>
 <section id="learning-rate" class="level2">
 <h2 class="anchored" data-anchor-id="learning-rate">Learning Rate</h2>
@@ -385,7 +385,7 @@ background-size: cover;
 <p>From here we can examine the performance of our simplest implementation of logistic regression. We will use the <code>LogisticRegression</code> class defined in our source files.</p>
 <p>Note: our <code>LogisticRegression</code> class is seeded. This allows us to directly compare the results of our various implementations.</p>
 <p>We will use the <code>fit</code> method to fit our model to the data using normal gradient descent. We can use the <code>predict</code> method to make predictions on future data. And we can use the <code>score</code> method to evaluate the accuracy of our model.</p>
-<div class="cell" data-execution_count="48">
+<div class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> LogisticRegression <span class="im">import</span> LogisticRegression</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create model</span></span>
@@ -398,13 +398,13 @@ background-size: cover;
 </div>
 </div>
 <p>We can access the loss and accuracy history of our model using the <code>loss_history</code> and <code>score_history</code> attributes. We can also access the weights of our model using the <code>w</code> attribute.</p>
-<div class="cell" data-execution_count="38">
+<div class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final weights are: </span><span class="sc">{</span>LR<span class="sc">.</span>w<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Final weights are: [1.70105767 1.77488985 0.0742251 ]</code></pre>
 </div>
 </div>
-<div class="cell" data-execution_count="39">
+<div class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final score is: </span><span class="sc">{</span>LR<span class="sc">.</span>score_history[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Final loss is: </span><span class="sc">{</span>LR<span class="sc">.</span>loss_history[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -413,7 +413,7 @@ Final loss is: 0.194</code></pre>
 </div>
 </div>
 <p>It would be nice to visualize the decisions our model is making. Doing this will show us where errors are being made. We will call the <code>LR.predict(X)</code> method to get the predicted class for each sample in our dataset. We will then plot the correctness of each prediction on a scatter plot.</p>
-<div class="cell" data-execution_count="59">
+<div class="cell" data-execution_count="6">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>y_preds <span class="op">=</span> LR.predict(X)</span>
@@ -436,7 +436,7 @@ Final loss is: 0.194</code></pre>
 <p>Here, red points indicate the incorrect predictions, and the grey points indicate the correct predictions. We can see that our model is making some mistakes, but it is still able to make correct predictions. We can also see that our model is not able to separate the two classes perfectly. This is because our model is linear, and the data is not linearly separable. Notice how the errors are concentrated along a line through the middle of the plot.</p>
 <p>The decision boundary of our model is the linear boundary that separates the two classes. This visualization of errors indirectly reveals the location of this boundary.</p>
 <p>Using the excellent <code>mlxtend</code> library, we can precisely plot the decision boundary of our model.</p>
-<div class="cell" data-execution_count="41">
+<div class="cell" data-execution_count="7">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mlxtend.plotting <span class="im">import</span> plot_decision_regions</span>
@@ -453,7 +453,7 @@ Final loss is: 0.194</code></pre>
 </div>
 <p>Now that we have a basic understanding of how our model works, let’s see how it works with its stochastic variants. We will start with stochastic gradient descent without momentum.</p>
 <p>Like before, we instantiate our model with the <code>LogisticRegression</code> class. We will use the <code>fit_stochastic</code> method to fit our model to the data using stochastic gradient descent. Then we can use the familiar <code>predict</code>, <code>score</code>, <code>loss_history</code>, <code>score_history</code>, and <code>w</code> attributes to examine the model.</p>
-<div class="cell" data-execution_count="54">
+<div class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>LRS <span class="op">=</span> LogisticRegression(epsilon<span class="op">=</span><span class="fl">1e-3</span>, seed<span class="op">=</span>seed)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit model with stochastic gradient descent</span></span>
@@ -464,7 +464,7 @@ Final loss is: 0.194</code></pre>
 </div>
 <p>Note how the stochastic variant converged to a solution in ~50 epochs, while the normal variant took ~400 (8x speedup!). This is because the stochastic variant is able to make updates to the model <span class="math inline">\(\frac{n}{b}\)</span> times per epoch where <span class="math inline">\(n\)</span> is the number of points and <span class="math inline">\(b\)</span> is the batch size. This allows it to converge to a solution faster than the normal variant which only makes updates once per epoch.</p>
 <p>Plotting the loss history of our model shows us how quickly the stochastic variant converges to a solution.</p>
-<div class="cell" data-execution_count="57">
+<div class="cell" data-execution_count="11">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.plot(LRS.loss_history)</span>
@@ -476,7 +476,7 @@ Final loss is: 0.194</code></pre>
 </div>
 </div>
 <p>The introduction of momentum adds a subtle improvement to our stochastic gradient descent. To show this, we will use the <code>fit_stochastic</code> method with the <code>momentum</code> parameter set to <code>True</code>.</p>
-<div class="cell" data-execution_count="63">
+<div class="cell" data-execution_count="12">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>LRSM <span class="op">=</span> LogisticRegression(epsilon<span class="op">=</span><span class="fl">1e-3</span>)</span>
@@ -491,7 +491,7 @@ Final loss is: 0.194</code></pre>
 <p>We can see that the stochastic variant with momentum converges to a solution in ~200 epochs, which is unexpected since we expect the stochastic gradient descent with momentum to converge faster than the stochastic variant without momentum.</p>
 <p>Plotting the loss history of our model shows us that the stochastic variant with momentum gets close to converging to a solution very quickly but does not quite reach the epsilon threshold we set for convergence.</p>
 <p>If we overlay the loss history of the stochastic variant with momentum and the stochastic variant without momentum, we can see that the stochastic variant with momentum reduces its loss more quickly than the stochastic variant without momentum.</p>
-<div class="cell" data-execution_count="70">
+<div class="cell" data-execution_count="13">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>lrs_loss_history <span class="op">=</span> LRS.loss_history</span>
@@ -513,7 +513,7 @@ Final loss is: 0.194</code></pre>
 </div>
 <p>So our expectations are actually correct. The stochastic variant with momentum does get close to the solution at a faster rate, however, it does not quite reach convergence as quickly as the stochastic variant without momentum.</p>
 <p>Now, let’s directly compare the performance of all three types of gradient descent. The following code will fit each of our models to the data and plot the loss history of each model.</p>
-<div class="cell" data-execution_count="76">
+<div class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>y_scale <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>]</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">12345</span></span>
@@ -573,7 +573,7 @@ Fit model with gradient descent in 1000/1000(max) epochs.</code></pre>
 <h3 class="anchored" data-anchor-id="example-1-large-alpha-leading-to-divergence">Example 1: Large alpha leading to divergence</h3>
 <p>Consider the following example where we set the learning rate to a large value. As earlier claimed, this can lead to divergence of the model.</p>
 <p>We will test this claim on the <code>make_moons</code> dataset from <code>sklearn.datasets</code>. This dataset is not linearly separable.</p>
-<div class="cell" data-execution_count="80">
+<div class="cell" data-execution_count="19">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: alpha too large</span></span>
@@ -590,7 +590,7 @@ Fit model with gradient descent in 1000/1000(max) epochs.</code></pre>
 </div>
 </div>
 <p>We will fit our model using normal gradient descent. We will set the learning rate to the obscenely large value of 29. Observe how the loss history of our model fails to converge to a solution over the course of 2000 epochs.</p>
-<div class="cell" data-execution_count="89">
+<div class="cell" data-execution_count="20">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression()</span>
@@ -621,7 +621,7 @@ Fit model with gradient descent in 1000/1000(max) epochs.</code></pre>
 </div>
 </div>
 <p>So clearly the model is not going to converge. But maybe this is just a fluke. Let’s try again with a smaller learning rate. We will set the learning rate to 0.1. This is a reasonable value for a learning rate. Observe how the loss history of our model converges to a solution over the course of 2000 epochs.</p>
-<div class="cell" data-execution_count="90">
+<div class="cell" data-execution_count="21">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>LR2 <span class="op">=</span> LogisticRegression()</span>
@@ -657,7 +657,7 @@ Fit model with gradient descent in 1000/1000(max) epochs.</code></pre>
 <h3 class="anchored" data-anchor-id="example-2-batch-size-convergence-speed">Example 2: Batch size &amp; convergence speed</h3>
 <p>With stochastic gradient descent, we can control the convergence speed of our model by adjusting the batch size. Again, we will test this claim on the <code>make_moons</code> dataset from <code>sklearn.datasets</code>. This dataset is not linearly separable.</p>
 <p>Using two models of stochastic gradient descent with momentum with differing batch sizes (20 and 100), we will show that the batch size controls the convergence speed of the model.</p>
-<div class="cell" data-execution_count="21">
+<div class="cell" data-execution_count="23">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Batch size influencing convergence time</span></span>
@@ -698,7 +698,7 @@ Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre
 <p>Observe how the model with a smaller batch size (20) converges to a solution much faster than the model with a larger batch size (100). This is because the model with a smaller batch size makes more updates per epoch than the model with a larger batch size.</p>
 <p>This does not mean small sizes are always better. For example, if we use a batch size of 2, the model can bounce around our minimizer and not converge to a solution. This is because the model with a batch size of 2 makes worse average approximations to the gradient. And such a small sample size would be very noisy.</p>
 <p>Observe that the model with a batch size of 2 leads to a noisy loss history.</p>
-<div class="cell" data-execution_count="93">
+<div class="cell" data-execution_count="24">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Batch size influencing convergence time</span></span>
@@ -740,7 +740,7 @@ Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre
 <section id="example-3-sgd-with-momentum-speeding-up-convergence-on-high-dimensional-data" class="level3">
 <h3 class="anchored" data-anchor-id="example-3-sgd-with-momentum-speeding-up-convergence-on-high-dimensional-data">Example 3: SGD with momentum speeding up convergence on high dimensional data</h3>
 <p>We will show that stochastic gradient descent with momentum can speed up convergence on high dimensional data. We will use the <code>make_blobs</code> dataset from <code>sklearn.datasets</code> to generate a dataset with 10 features and 2 classes. We use a large sample size of 40,000 observations.</p>
-<div class="cell" data-execution_count="22">
+<div class="cell" data-execution_count="25">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: momentum leading to faster convergence</span></span>
@@ -793,7 +793,7 @@ Fit model with stochastic gradient descent in 1000/1000(max) epochs.</code></pre
 <section id="example-4-large-epsilon-leading-to-early-exit" class="level3">
 <h3 class="anchored" data-anchor-id="example-4-large-epsilon-leading-to-early-exit">Example 4: Large epsilon leading to early exit</h3>
 <p>Consider the following example where we set the epsilon threshold to a large value (0.01).</p>
-<div class="cell" data-execution_count="94">
+<div class="cell" data-execution_count="28">
 <details>
 <summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: large epsilon leading to early exit</span></span>
