@@ -2,6 +2,8 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/unsupervised-learning/index.html",
+      "/posts/kernel-logistic-regression/index.html",
       "/posts/logistic-regression-and-gradient-descent/index.html",
       "/posts/perceptron/index.html"
     ]
