@@ -51,7 +51,7 @@ class SpectralCommunityDetection:
         return cls.k_means_clustering(X, k)
     
     @classmethod
-    def spectral_clustering(cls, G, k):
+    def spectral_clustering(cls, G, k=2):
         clusters = cls.get_clusters(G, k)
         return cls.build_community_label_vector(clusters, k)
     

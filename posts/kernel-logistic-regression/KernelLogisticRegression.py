@@ -25,7 +25,6 @@ class KernelLogisticRegression:
 
         self.v = self.__rs.normal(size = n_samples) # weights need to be centered around 0 or we will not reach the global minimum
 
-
         # for epoch in range(epochs):
         #     km = self.kernel(self.X_train, self.X_train, **self.kernel_kwargs)
         #     y_pred = self.__predict(X_)
@@ -40,7 +39,6 @@ class KernelLogisticRegression:
 
     def predict(self, X) -> np.ndarray:
         X_ = self.__get_biased_X(X)
-        # return self.__predict_threshold(self.__predict(X_))
         return self.__predict(X_)
     
     def __predict(self, X_) -> np.ndarray:
@@ -74,17 +72,13 @@ class KernelLogisticRegression:
     def logistic_loss(self, y, y_pred) -> float:
         return (-y*np.log(self.sigmoid(y_pred)) - (1-y)*np.log(1-self.sigmoid(y_pred))).mean()
 
-    @staticmethod
-    def gradient(km, y, y_pred) -> np.ndarray:
-        return km @ (y_pred - y)
+    # @staticmethod
+    # def gradient(km, y, y_pred) -> np.ndarray:
+    #     return km @ (y_pred - y)
     
     @staticmethod
     def sigmoid(z) -> np.ndarray:
         return 1 / (1 + np.exp(-z))
-    
-    @staticmethod
-    def __np_array_is_empty_or_null(arr) -> bool:
-        return arr is None or not len(arr)
     
     @staticmethod
     def __get_biased_X(X) -> np.ndarray:
