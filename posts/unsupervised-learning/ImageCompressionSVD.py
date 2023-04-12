@@ -8,8 +8,12 @@ class ImageCompressionSVD:
         return 1 - np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
 
     @staticmethod
-    def compress_image(img, k):
+    def compress_image(img, k, epsilon = None):
+        # u, s, v = np.linalg.svd(img)
+        # return u[:, :k] @ np.diag(s[:k]) @ v[:k, :]
         u, s, v = np.linalg.svd(img)
+        if epsilon is not None:
+            s[s < epsilon] = 0
         return u[:, :k] @ np.diag(s[:k]) @ v[:k, :]
     
     @staticmethod
@@ -50,12 +54,10 @@ class ImageCompressionSVD:
 
         return k
         
-    
-
     @classmethod
-    def svd_reconstruct(cls, img, k):
+    def svd_reconstruct(cls, img, k, epsilon = None):
         A = cls.to_grayscale_image(img)
-        A_ = cls.compress_image(A, k)
+        A_ = cls.compress_image(A, k, epsilon)
         cls.compare_images(A, A_)
         plt.show()
 
