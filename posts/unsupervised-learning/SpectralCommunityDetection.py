@@ -17,7 +17,6 @@ class SpectralCommunityDetection:
                 G.add_edge(i, j)
         return G
     
-
     @staticmethod
     def get_adjacency_matrix(G):
         return nx.adjacency_matrix(G).toarray()
@@ -27,7 +26,6 @@ class SpectralCommunityDetection:
         A = cls.get_adjacency_matrix(G)
         return np.diag(A.sum(axis=0)) - A
 
-        
     @staticmethod
     def get_eigenvectors(L, k):
         e_values, e_vectors = np.linalg.eig(L) 
@@ -42,7 +40,6 @@ class SpectralCommunityDetection:
     def k_means_clustering(X, k):
         kmeans = KMeans(n_clusters=k).fit(X)
         return kmeans.labels_
-
 
     @classmethod
     def get_clusters(cls, G, k):

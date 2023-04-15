@@ -6,8 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Nicholas Sliter">
+<meta name="dcterms.date" content="2023-04-15">
+<meta name="description" content="Exploring unsupervised learning throigh SVD and Spectral Clustering">
 
-<title>CS451 Course Blog – index</title>
+<title>CS451 Course Blog - Unsupervised Learning</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -129,6 +132,7 @@ background-size: cover;
     }
     </style>
 
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../../styles.css">
 </head>
@@ -169,7 +173,39 @@ background-size: cover;
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Unsupervised Learning</h1>
+                  <div>
+        <div class="description">
+          Exploring unsupervised learning throigh SVD and Spectral Clustering
+        </div>
+      </div>
+                </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Nicholas Sliter </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 15, 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     
@@ -178,187 +214,404 @@ background-size: cover;
 
 
 
-<div class="cell" data-execution_count="86">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>reload_ext autoreload</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
+
+<p>In this two-part blog post, I will discuss unsupervised learning. In the first part, I will discuss SVD and its application for image compression. And in the second part, I will discuss Spectral Clustering and K-Means Clustering for use in graph partitioning.</p>
+<section id="svd-for-image-compression" class="level2">
+<h2 class="anchored" data-anchor-id="svd-for-image-compression">SVD for Image Compression</h2>
+<p>Singular-Value Decomposition (SVD) is a matrix factorization technique that can be used to reduce the dimensionality of a matrix. In part 1, I will show how we can exploit dimensionality reduction to compress images.</p>
+<p>We will start by choosing a benchmark image to work with. I will use the following image of a cheetah since it includes lots of fine detail and high contrast.</p>
+<p>Observe below the detail in</p>
+<ol type="1">
+<li>the cheetah’s fur</li>
+<li>the grass blades</li>
+<li>the blurred background</li>
+<li>and in the gradient of the cheetah’s spots as it approaches the face</li>
+</ol>
+<p>For ease of use, I will convert the image to grayscale and then to a numpy array.</p>
+<div class="cell" data-execution_count="156">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>image_url <span class="op">=</span> <span class="st">"https://fastly.picsum.photos/id/219/1200/1200.jpg?hmac=hVx7D_aNUjlmtlaYidaqbaIOhwFFYwkL1VrMXiFFFCY"</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> read_image(image_url)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> PIL</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> networkx <span class="im">as</span> nx</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ImageCompressionSVD <span class="im">import</span> ImageCompressionSVD</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> SpectralCommunityDetection <span class="im">import</span> SpectralCommunityDetection</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell" data-execution_count="87">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> read_image(url):</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(PIL.Image.<span class="bu">open</span>(urllib.request.urlopen(url)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell" data-execution_count="88">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>image_url <span class="op">=</span> <span class="st">"https://fastly.picsum.photos/id/219/1200/1200.jpg?hmac=hVx7D_aNUjlmtlaYidaqbaIOhwFFYwkL1VrMXiFFFCY"</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> read_image(image_url)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>img_grey <span class="op">=</span> ImageCompressionSVD.to_grayscale_image(img)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.compare_images(img, img_grey, <span class="st">"original image"</span>, <span class="st">"grayscale image"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>img_grey <span class="op">=</span> ImageCompressionSVD.to_grayscale_image(img)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.compare_images(img, img_grey, <span class="st">"original image"</span>, <span class="st">"grayscale image"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <p><img src="index_files/figure-html/cell-4-output-1.png" class="img-fluid"></p>
 </div>
 </div>
-<div class="cell" data-execution_count="89">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ImageCompressionSVD.svd_reconstruct(img, 10)</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ImageCompressionSVD.svd_reconstruct(img, 50)</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ImageCompressionSVD.svd_reconstruct(img, 100)</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ImageCompressionSVD.svd_reconstruct(img, 200)</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># k_values = [10, 50, 100, 200]</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>k_values <span class="op">=</span> [<span class="dv">2</span>]</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_experiment(img, k_values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>relative size for k = 2: 0.0033347222222222224</code></pre>
-</div>
+<p>Our solution compresses images by takeing a subset of size <span class="math inline">\(k\)</span> of the singular values. The following code shows how we can do this using the <code>numpy.linalg.svd</code> function.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compress_image(img, k):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>        u, s, v <span class="op">=</span> np.linalg.svd(img)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> u[:, :k] <span class="op">@</span> np.diag(s[:k]) <span class="op">@</span> v[:k, :]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Specifically, we take:</p>
+<ol type="1">
+<li>The first k columns of U.</li>
+<li>The top k singular values in S</li>
+<li>The first k rows of V.</li>
+</ol>
+<p>We also consider an extension to this compression by letting our user specify a value of <span class="math inline">\(\epsilon\)</span> that filters out singular values that are less than <span class="math inline">\(\epsilon\)</span>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compress_image(img, k, epsilon <span class="op">=</span> <span class="va">None</span>):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>        u, s, v <span class="op">=</span> np.linalg.svd(img)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> epsilon <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>            s[s <span class="op">&lt;</span> epsilon] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> u[:, :k] <span class="op">@</span> np.diag(s[:k]) <span class="op">@</span> v[:k, :]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>We can now compare the original image to the compressed image. We will use the <code>ImageCompressionSVD.compare_images</code> method to do this.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> compare_images(A, A_, title_1 <span class="op">=</span> <span class="st">"original image"</span>, title_2 <span class="op">=</span> <span class="st">"reconstructed image"</span>):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>        fig, axarr <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize <span class="op">=</span> (<span class="dv">7</span>, <span class="dv">3</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        axarr[<span class="dv">0</span>].imshow(A, cmap <span class="op">=</span> <span class="st">"Greys"</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        axarr[<span class="dv">0</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        axarr[<span class="dv">0</span>].<span class="bu">set</span>(title <span class="op">=</span> title_1)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        axarr[<span class="dv">1</span>].imshow(A_, cmap <span class="op">=</span> <span class="st">"Greys"</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        axarr[<span class="dv">1</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        axarr[<span class="dv">1</span>].<span class="bu">set</span>(title <span class="op">=</span> title_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>ImageCompressionSVD.svd_reconstruct</code> method will do the entire compression and comparison pipeline for us.</p>
+<div class="cell" data-execution_count="157">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-5-output-2.png" class="img-fluid"></p>
+<p><img src="index_files/figure-html/cell-5-output-1.png" class="img-fluid"></p>
 </div>
 </div>
-<div class="cell" data-execution_count="90">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I want to make the image 3x smaller</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>compression_factor <span class="op">=</span> <span class="dv">3</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> ImageCompressionSVD.find_k_for_compression_threshold(img, compression_factor)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>k <span class="op">=</span> <span class="sc">}</span><span class="ss">"</span>,)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, k)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>threshold: 0.3333333333333333
-k = 199</code></pre>
-</div>
+<div class="cell" data-execution_count="158">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, <span class="dv">15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-6-output-2.png" class="img-fluid"></p>
+<p><img src="index_files/figure-html/cell-6-output-1.png" class="img-fluid"></p>
 </div>
 </div>
-<div class="cell" data-execution_count="91">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.karate_club_graph()</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>layout <span class="op">=</span> nx.layout.fruchterman_reingold_layout(G)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>nx.draw(G, layout, with_labels<span class="op">=</span><span class="va">True</span>, node_color <span class="op">=</span> <span class="st">"steelblue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="159">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, <span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <p><img src="index_files/figure-html/cell-7-output-1.png" class="img-fluid"></p>
 </div>
 </div>
-<div class="cell" data-execution_count="92">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>clubs <span class="op">=</span> nx.get_node_attributes(G, <span class="st">"club"</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>nx.draw(G, layout,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        with_labels<span class="op">=</span><span class="va">True</span>, </span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>        node_color <span class="op">=</span> [<span class="st">"orange"</span> <span class="cf">if</span> clubs[i] <span class="op">==</span> <span class="st">"Officer"</span> <span class="cf">else</span> <span class="st">"steelblue"</span> <span class="cf">for</span> i <span class="kw">in</span> G.nodes()],</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        edgecolors <span class="op">=</span> <span class="st">"black"</span> <span class="co"># confusingly, this is the color of node borders, not of edges</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        ) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
-</div>
-</div>
-<div class="cell" data-execution_count="93">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>communities <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(G, <span class="dv">2</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>nx.draw(G, layout,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        with_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        node_color <span class="op">=</span> [<span class="st">"orange"</span> <span class="cf">if</span> i <span class="kw">in</span> communities[<span class="dv">0</span>] <span class="cf">else</span> <span class="st">"steelblue"</span> <span class="cf">for</span> i <span class="kw">in</span> G.nodes()],</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        edgecolors <span class="op">=</span> <span class="st">"black"</span> <span class="co"># confusingly, this is the color of node borders, not of edges</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compression with <span class="math inline">\(k=1\)</span> is unrecognizable.</p>
+<p>So compressing with <span class="math inline">\(k=15\)</span> doesn’t give us a great image but the image is still recognizable.</p>
+<p>And compressing with <span class="math inline">\(k=1000\)</span> gives us a pretty good image.</p>
+<p>But what exactly is our cost savings here? And how do we choose <span class="math inline">\(k\)</span>?</p>
+<p>We can compute the relative size of our images mathematically. The following code computes the relative size of the compressed image to the original image.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_relative_size(A, k):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        A_space <span class="op">=</span> A.shape[<span class="dv">0</span>] <span class="op">*</span> A.shape[<span class="dv">1</span>]</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        A_compressed_space <span class="op">=</span> k <span class="op">*</span> (A.shape[<span class="dv">0</span>] <span class="op">+</span> A.shape[<span class="dv">1</span>]) <span class="op">+</span> k</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> A_compressed_space <span class="op">/</span> A_space</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In our compressed image we keep the first <span class="math inline">\(k\)</span> rows of <span class="math inline">\(U\)</span> (which has shape <span class="math inline">\(m \times m\)</span>), the first <span class="math inline">\(k\)</span> columns of <span class="math inline">\(V\)</span> (which has shape <span class="math inline">\(n \times n\)</span>), and the first <span class="math inline">\(k\)</span> singular values in <span class="math inline">\(S\)</span> (which has shape <span class="math inline">\(m \times n\)</span>).</p>
+<p>This gives us <span class="math inline">\(k \cdot m\)</span> elements from <span class="math inline">\(U\)</span>, <span class="math inline">\(k \cdot n\)</span> elements from <span class="math inline">\(V\)</span>, and <span class="math inline">\(k\)</span> elements from <span class="math inline">\(S\)</span>. So our total number of elements is <span class="math inline">\(k \cdot (m + n) + k\)</span>.</p>
+<p>But how useful is this compression if the images it produces are low-quality?</p>
+<p>To experiment with our solution, we will run our SVD compression -&gt; decompression pipeline on the image with different values of <span class="math inline">\(k\)</span>. We will then compare the original image to the decompressed image for each value of <span class="math inline">\(k\)</span>. And we wll observe the relative size of the compressed image to the original image for each value of <span class="math inline">\(k\)</span>.</p>
+<div class="cell" data-execution_count="160">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>k_values <span class="op">=</span> [<span class="dv">10</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">200</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_experiment(img, k_values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>68</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>c:\Users\nich1\OneDrive\Documents\GitHub\middlebury-csci-0451\posts\unsupervised-learning\SpectralCommunityDetection.py:23: FutureWarning: adjacency_matrix will return a scipy.sparse array instead of a matrix in Networkx 3.0.
-  return nx.adjacency_matrix(G).toarray()</code></pre>
-</div>
-<div class="cell-output cell-output-error">
-<pre><code>TypeError: argument of type 'numpy.int32' is not iterable</code></pre>
-</div>
-</div>
-<p>We make the classic mistake of mislabeling individual 8.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_circles</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> make_circles(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.05</span>, factor<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[:, <span class="dv">0</span>], X[:, <span class="dv">1</span>], c<span class="op">=</span>y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="78">
-<pre><code>&lt;matplotlib.collections.PathCollection at 0x1d7d4219db0&gt;</code></pre>
+<pre><code>relative size for k = 10: 0.01667361111111111</code></pre>
 </div>
 <div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-10-output-2.png" class="img-fluid"></p>
-</div>
-</div>
-<div class="cell" data-execution_count="97">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>GC <span class="op">=</span> SpectralCommunityDetection.get_nearest_neighbor_graph(X, <span class="dv">5</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>communities <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(GC, <span class="dv">2</span>).tolist()</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"orange"</span>, <span class="st">"steelblue"</span>]</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx_nodes(</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    GC,</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    pos <span class="op">=</span> {i: X[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(X))},</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    node_color <span class="op">=</span> [colors[i] <span class="cf">for</span> i <span class="kw">in</span> communities],</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    node_size <span class="op">=</span> <span class="dv">2</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>c:\Users\nich1\OneDrive\Documents\GitHub\middlebury-csci-0451\posts\unsupervised-learning\SpectralCommunityDetection.py:23: FutureWarning: adjacency_matrix will return a scipy.sparse array instead of a matrix in Networkx 3.0.
-  return nx.adjacency_matrix(G).toarray()</code></pre>
-</div>
-<div class="cell-output cell-output-display" data-execution_count="97">
-<pre><code>&lt;matplotlib.collections.PathCollection at 0x1d7e30f7ac0&gt;</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-11-output-3.png" class="img-fluid"></p>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 4 rings</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>X_large, y_large <span class="op">=</span> make_circles(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.05</span>, factor<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>X_small, y_small <span class="op">=</span> make_circles(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.05</span>, factor<span class="op">=</span><span class="fl">0.2</span>)</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>X_large[:, <span class="dv">0</span>] <span class="op">*=</span> <span class="dv">2</span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>X_large[:, <span class="dv">1</span>] <span class="op">*=</span> <span class="dv">2</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>X_small[:, <span class="dv">0</span>] <span class="op">*=</span> <span class="fl">0.5</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>X_small[:, <span class="dv">1</span>] <span class="op">*=</span> <span class="fl">0.5</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>y_small <span class="op">+=</span> <span class="dv">2</span></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.concatenate([X_large, X_small])</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> np.concatenate([y_large, y_small])</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[:, <span class="dv">0</span>], X[:, <span class="dv">1</span>], c<span class="op">=</span>y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="80">
-<pre><code>&lt;matplotlib.collections.PathCollection at 0x1d7d4716f50&gt;</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-12-output-2.png" class="img-fluid"></p>
-</div>
-</div>
-<div class="cell" data-execution_count="103">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>GMC <span class="op">=</span> SpectralCommunityDetection.get_nearest_neighbor_graph(X, <span class="dv">12</span>)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>communities <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(GMC, <span class="dv">4</span>).tolist()</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"orange"</span>, <span class="st">"steelblue"</span>, <span class="st">"green"</span>, <span class="st">"red"</span>]</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx_nodes(</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    GMC,</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    pos <span class="op">=</span> {i: X[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(X))},</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    node_color <span class="op">=</span> [colors[i] <span class="cf">for</span> i <span class="kw">in</span> communities],</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    node_size <span class="op">=</span> <span class="dv">2</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>c:\Users\nich1\OneDrive\Documents\GitHub\middlebury-csci-0451\posts\unsupervised-learning\SpectralCommunityDetection.py:23: FutureWarning: adjacency_matrix will return a scipy.sparse array instead of a matrix in Networkx 3.0.
-  return nx.adjacency_matrix(G).toarray()</code></pre>
+<p><img src="index_files/figure-html/cell-8-output-2.png" class="img-fluid"></p>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>accuracy = 0.0005</code></pre>
+<pre><code>relative size for k = 50: 0.08336805555555556</code></pre>
 </div>
 <div class="cell-output cell-output-display">
-<p><img src="index_files/figure-html/cell-13-output-3.png" class="img-fluid"></p>
+<p><img src="index_files/figure-html/cell-8-output-4.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>relative size for k = 100: 0.1667361111111111</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-8-output-6.png" class="img-fluid"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>relative size for k = 200: 0.3334722222222222</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-8-output-8.png" class="img-fluid"></p>
 </div>
 </div>
+<p>So we can see the images are about identical at <span class="math inline">\(k=200\)</span> and the relative size is about <span class="math inline">\(\frac{1}{3}\)</span> of the original image! This means we can compress our image by a factor of 3 and still have a very high quality image.</p>
+<p>Now what if we need to compress our image by a certain amount? We could test a bunch of <span class="math inline">\(k\)</span> values ourselves but that would be tedious. Instead, we can use the <code>ImageCompressionSVD.find_k_for_compression_threshold</code> method to do this for us. Since this our relative-size method uses only simple math, it is very fast. If we were even more concerned about speed, we could switch to using binary search instead of linear search.</p>
+<p>So, if I need to make an image 3x smaller, I can call <code>find_k_for_compression_threshold</code> with a compression_factor of 3 and it will return the value of <span class="math inline">\(k\)</span> that will give me a compressed image that is 1/3 the size of the original image.</p>
+<div class="cell" data-execution_count="161">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I want to make the image 3x smaller</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>compression_factor <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> ImageCompressionSVD.find_k_for_compression_threshold(img, compression_factor)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>k <span class="op">=</span> <span class="sc">}</span><span class="ss">"</span>,)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>threshold: 0.3333333333333333
+k = 199</code></pre>
+</div>
+</div>
+<p>Here we can see that value of <span class="math inline">\(k\)</span> is 199. So as evidenced above, we can compress our image by a factor of 3 and still have a very high quality image.</p>
+<div class="cell" data-execution_count="162">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, k)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Now we can also use our <span class="math inline">\(\epsilon\)</span> parameter to filter out singular values that are less than <span class="math inline">\(\epsilon\)</span>. This could be used to additionally improve our compression (if we are using sparse matrix formats).</p>
+<div class="cell" data-execution_count="163">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I want to ignore all singular values less than epsilon</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>epsilon <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, k, epsilon)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-11-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>But we do need to be careful, consider what happens if we use an epsilon value that is too large. Observe the following image.</p>
+<div class="cell" data-execution_count="164">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># What happens if epsilon is too large?</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>epsilon <span class="op">=</span> <span class="dv">20000</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>ImageCompressionSVD.svd_reconstruct(img, k, epsilon)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Recall this similar to the initial compression examples with <span class="math inline">\(k=1\)</span></p>
+</section>
+<section id="spectral-clustering" class="level2">
+<h2 class="anchored" data-anchor-id="spectral-clustering">Spectral Clustering</h2>
+<p>In part 2, I will discuss Spectral Clustering for use in graph partitioning. We will start with the famous Karate Club graph.</p>
+<div class="cell" data-execution_count="165">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> nx.karate_club_graph()</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>layout <span class="op">=</span> nx.layout.fruchterman_reingold_layout(G)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>nx.draw(G, layout, with_labels<span class="op">=</span><span class="va">True</span>, node_color <span class="op">=</span> <span class="st">"steelblue"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-13-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>We will use the <code>club</code> label to denote the true partition of the graph. As shown in the figure below, the graph has 2 communities and split it into 2 roughly equal parts.</p>
+<div class="cell" data-execution_count="166">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>clubs <span class="op">=</span> nx.get_node_attributes(G, <span class="st">"club"</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>nx.draw(G, layout,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>        with_labels<span class="op">=</span><span class="va">True</span>, </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        node_color <span class="op">=</span> [<span class="st">"orange"</span> <span class="cf">if</span> clubs[i] <span class="op">==</span> <span class="st">"Officer"</span> <span class="cf">else</span> <span class="st">"steelblue"</span> <span class="cf">for</span> i <span class="kw">in</span> G.nodes()],</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>        edgecolors <span class="op">=</span> <span class="st">"black"</span> <span class="co"># confusingly, this is the color of node borders, not of edges</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        ) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>We will use the <code>SpectralCommunityDetection</code> class to do the clustering. The <code>SpectralCommunityDetection.spectral_clustering</code> method will do the entire clustering pipeline for us.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_clusters(cls, G, k):</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>        L <span class="op">=</span> cls.get_laplacian_matrix(G)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> cls.get_eigenvectors(L, k)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cls.k_means_clustering(X, k)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> spectral_clustering(cls, G, k<span class="op">=</span><span class="dv">2</span>):</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        clusters <span class="op">=</span> cls.get_clusters(G, k)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> cls.build_community_label_vector(clusters, k)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To do the clustering, we will use the following steps:</p>
+<ol type="1">
+<li>Get the Laplacian matrix of the graph.</li>
+<li>Get k eigenvectors sorted by eigenvalue from the Laplacian matrix.</li>
+<li>Cluster the eigenvectors using k-means into k clusters.</li>
+<li>Output a vector of labels in the same order as the nodes in the graph.</li>
+</ol>
+<p>We will use the <code>SpectralCommunityDetection.get_laplacian_matrix</code> method to get the Laplacian matrix of the graph.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_laplacian_matrix(cls, G):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>        A <span class="op">=</span> cls.get_adjacency_matrix(G)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.diag(A.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)) <span class="op">-</span> A</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The Laplacian matrix is defined as <span class="math inline">\(L = D - A\)</span> where <span class="math inline">\(D\)</span> is the diagonal degree matrix and <span class="math inline">\(A\)</span> is the adjacency matrix.</p>
+<p>Then we can get the eigenvectors of the Laplacian matrix using the <code>SpectralCommunityDetection.get_eigenvectors</code> method.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> get_eigenvectors(L, k):</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>        e_values, e_vectors <span class="op">=</span> np.linalg.eig(L) </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        e_values <span class="op">=</span> np.real(e_values) <span class="co"># We need to discard imaginary parts for kmeans</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        e_vectors <span class="op">=</span> np.real(e_vectors)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>        idx <span class="op">=</span> np.argsort(e_values)[:k]</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> e_vectors[:, idx]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>And we can cluster the eigenvectors using k-means using the <code>SpectralCommunityDetection.k_means_clustering</code> method. We will use the <code>sklearn</code> implementation of k-means.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> k_means_clustering(X, k):</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>        kmeans <span class="op">=</span> KMeans(n_clusters<span class="op">=</span>k).fit(X)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> kmeans.labels_</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>And finally we can build a vector of labels in the same order as the nodes in the graph using the <code>SpectralCommunityDetection.build_community_label_vector</code> method.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> build_community_label_vector(clusters, k):</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>        <span class="co"># [[0, 1, 2], [3, 4, 5]] -&gt; [0, 0, 0, 1, 1, 1]</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>        community_labels <span class="op">=</span> np.zeros(<span class="bu">len</span>(clusters)).astype(<span class="bu">int</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(k):</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>            community_labels[clusters <span class="op">==</span> i] <span class="op">=</span> i</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> community_labels</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="167">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>communities <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(G, <span class="dv">2</span>).tolist()</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>nx.draw(G, layout,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>        with_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>        node_color <span class="op">=</span> [<span class="st">"orange"</span> <span class="cf">if</span> communities[i] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">"steelblue"</span> <span class="cf">for</span> i <span class="kw">in</span> G.nodes()],</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>        edgecolors <span class="op">=</span> <span class="st">"black"</span> <span class="co"># confusingly, this is the color of node borders, not of edges</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># suppress output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-15-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>We make the classic mistake of mislabeling individual 8. But overwise, our labeling is very good. We can see that the clustering algorithm has correctly identified the 2 communities in the graph.</p>
+<p>Now let’s see how we can extend spectral clustering to scatterplots of points. Since we defined spectral clustrering over a graph, we can transform our points into a graph using the <code>get_nearest_neighbor_graph</code> method. This method uses KNN to find the nearest neighbors (in Euclidean distance) on the scatterplot and sets them as neighbors in the graph. We can then use the same spectral clustering algorithm to cluster the points.</p>
+<div class="cell" data-execution_count="168">
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-16-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>But now we need to be careful as our constructed graph relies on a hyperparameter, K. As shown below, a wrong choice of K can lead to an obvious misclassification of points.</p>
+<div class="cell" data-execution_count="169">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">0</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>GC <span class="op">=</span> SpectralCommunityDetection.get_nearest_neighbor_graph(X, <span class="dv">6</span>)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>communities <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(GC, <span class="dv">2</span>).tolist()</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"orange"</span>, <span class="st">"steelblue"</span>]</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx_nodes(</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    GC,</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    pos <span class="op">=</span> {i: X[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(X))},</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    node_color <span class="op">=</span> [colors[i] <span class="cf">for</span> i <span class="kw">in</span> communities],</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    node_size <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a><span class="va">None</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-17-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Now let’s show that we can use this algorithm with a better choice of K and that we can use it to cluster multiple classes of points. We will do this by adding two more circles to our scatterplot from <code>sklearn.datasets.make_circles</code>.</p>
+<div class="cell" data-execution_count="170">
+<details>
+<summary>Show the code</summary>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 4 rings</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>X_large, y_large <span class="op">=</span> make_circles(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.05</span>, factor<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>X_small, y_small <span class="op">=</span> make_circles(n_samples<span class="op">=</span><span class="dv">1000</span>, noise<span class="op">=</span><span class="fl">0.05</span>, factor<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>X_large[:, <span class="dv">0</span>] <span class="op">*=</span> <span class="fl">3.5</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>X_large[:, <span class="dv">1</span>] <span class="op">*=</span> <span class="fl">3.5</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>X_small[:, <span class="dv">0</span>] <span class="op">*=</span> <span class="fl">0.6</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>X_small[:, <span class="dv">1</span>] <span class="op">*=</span> <span class="fl">0.7</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>y_small <span class="op">+=</span> <span class="dv">2</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.concatenate([X_large, X_small])</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> np.concatenate([y_large, y_small])</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[:, <span class="dv">0</span>], X[:, <span class="dv">1</span>], c<span class="op">=</span>y)</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a><span class="va">None</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-18-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Observe the 4 distinct classifications of points. We want our algorithm to return a classification of points that looks like this.</p>
+<div class="cell" data-execution_count="171">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">0</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>GMC <span class="op">=</span> SpectralCommunityDetection.get_nearest_neighbor_graph(X, <span class="dv">12</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>communities <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(GMC, <span class="dv">4</span>).tolist()</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"orange"</span>, <span class="st">"steelblue"</span>, <span class="st">"green"</span>, <span class="st">"red"</span>]</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>nx.draw_networkx_nodes(</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    GMC,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    pos <span class="op">=</span> {i: X[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(X))},</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    node_color <span class="op">=</span> [colors[i] <span class="cf">for</span> i <span class="kw">in</span> communities],</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    node_size <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="171">
+<pre><code>&lt;matplotlib.collections.PathCollection at 0x15f8c41a7a0&gt;</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="index_files/figure-html/cell-19-output-2.png" class="img-fluid"></p>
+</div>
+</div>
+<p>While this looks good to my eyes, how can we quantitatively determine if this labeling is good?</p>
+<p>Unfortunately, the classes returned by our algorithm do not have the same numerical identifiers as the classes in the original dataset. So we need to find a way to evaluate the quality of our clustering. We will do this by using a similarity measure.</p>
+<p>For a measure of similarity <span class="math inline">\([0, 1]\)</span> between two categorical labelings <span class="math inline">\(z_1\)</span> and <span class="math inline">\(z_2\)</span> that is permutation invariant, I propose we consider the averaged Jaccard Index about each point <span class="math inline">\(i\)</span>: such that <span class="math inline">\(sim(z_1, z_2) = \frac{1}{n}\sum_{i=1}^n J(label(z_1, i), label(z_2, i))\)</span></p>
+<p>where <span class="math inline">\(label(z_i, j)\)</span> = returns the label group <span class="math inline">\(g_{i,j}\)</span> of point <span class="math inline">\(j\)</span> in <span class="math inline">\(z_i\)</span>. and where <span class="math inline">\(J(g_{i,j}, g_{n, j})\)</span> is the Jaccard Index between the group that contains point <span class="math inline">\(j\)</span> in <span class="math inline">\(z_i\)</span> and the group that contains point <span class="math inline">\(j\)</span> in <span class="math inline">\(z_n\)</span>.</p>
+<div class="cell" data-execution_count="172">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> jaccard_index(gi: <span class="bu">list</span>, gj: <span class="bu">list</span>):</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""compute the jaccard index between two node label groups"""</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">len</span>(<span class="bu">set</span>(gi).intersection(<span class="bu">set</span>(gj))) <span class="op">/</span> <span class="bu">len</span>(<span class="bu">set</span>(gi).union(<span class="bu">set</span>(gj)))</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> averaged_jaccard_index_sim(labels:<span class="bu">list</span>, zi: <span class="bu">list</span>, zj: <span class="bu">list</span>):</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""compute the average jaccard index between node label groups in zi and zj"""</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    zi_node_to_group_map <span class="op">=</span> {node: group <span class="cf">for</span> node, group <span class="kw">in</span> <span class="bu">enumerate</span>(zi)} <span class="co"># exactly zi</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>    zj_node_to_group_map <span class="op">=</span> {node: group <span class="cf">for</span> node, group <span class="kw">in</span> <span class="bu">enumerate</span>(zj)}</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>    zi_group_to_node_map <span class="op">=</span> {group: [] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">set</span>(labels)}</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>    zj_group_to_node_map <span class="op">=</span> {group: [] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">set</span>(labels)}</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> node, group <span class="kw">in</span> <span class="bu">enumerate</span>(zi):</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>        zi_group_to_node_map[group].append(node)</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> node, group <span class="kw">in</span> <span class="bu">enumerate</span>(zj):</span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>        zj_group_to_node_map[group].append(node)</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>    jaccard_index_sum <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> node, _ <span class="kw">in</span> <span class="bu">enumerate</span>(zi):</span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>        zi_group <span class="op">=</span> zi_node_to_group_map[node]</span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>        zj_group <span class="op">=</span> zj_node_to_group_map[node]</span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>        zi_node_list <span class="op">=</span> zi_group_to_node_map[zi_group]</span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a>        zj_node_list <span class="op">=</span> zj_group_to_node_map[zj_group]</span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>        jaccard_index_sum <span class="op">+=</span> jaccard_index(zi_node_list, zj_node_list)</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jaccard_index_sum <span class="op">/</span> <span class="bu">len</span>(zi)</span>
+<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-33"><a href="#cb31-33" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As an example of this measure, let’s consider the Karate Club example from earlier.</p>
+<div class="cell" data-execution_count="173">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>actual_labeling <span class="op">=</span> [<span class="dv">0</span> <span class="cf">if</span> clubs[i] <span class="op">==</span> <span class="st">"Officer"</span> <span class="cf">else</span> <span class="dv">1</span> <span class="cf">for</span> i <span class="kw">in</span> G.nodes()]</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>predicted_labeling <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(G, <span class="dv">2</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>sim <span class="op">=</span> averaged_jaccard_index_sim(labels, actual_labeling, predicted_labeling)</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Test label invariance</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>actual_labeling <span class="op">=</span> [<span class="dv">1</span> <span class="cf">if</span> clubs[i] <span class="op">==</span> <span class="st">"Officer"</span> <span class="cf">else</span> <span class="dv">0</span> <span class="cf">for</span> i <span class="kw">in</span> G.nodes()]</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>predicted_labeling <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(G, <span class="dv">2</span>)</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>sim2 <span class="op">=</span> averaged_jaccard_index_sim(labels, actual_labeling, predicted_labeling)</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>sim <span class="op">=</span> <span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> np.isclose(sim, sim2):</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Label invariance works!"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>sim = 0.916
+Label invariance works!</code></pre>
+</div>
+</div>
+<p>So our similarity measure is label invariant and is defined on <span class="math inline">\([0,1]\)</span>. A high similarly score means that two labeling are similar. So this measure confirms that our spectral clustering is good at classifying the communities in the Karate Club graph.</p>
+<p>Now let’s use this measure to see how well we did on the rings of circles example.</p>
+<div class="cell" data-execution_count="174">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>actual_labeling <span class="op">=</span> y</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>predicted_labeling <span class="op">=</span> SpectralCommunityDetection.spectral_clustering(GMC, <span class="dv">4</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>sim <span class="op">=</span> averaged_jaccard_index_sim(labels, actual_labeling, predicted_labeling)</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>sim <span class="op">=</span> <span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>sim = 1.000</code></pre>
+</div>
+</div>
+<p>Our spectral clustering is very good at classifying the communities in our rings of circles graph (with the added caveat that we needed to fiddle with the K value during the KNN graph construction step)</p>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
