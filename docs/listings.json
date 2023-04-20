@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/learning-from-timnit-gebru/index.html",
       "/posts/unsupervised-learning/index.html",
       "/posts/kernel-logistic-regression/index.html",
       "/posts/logistic-regression-and-gradient-descent/index.html",
