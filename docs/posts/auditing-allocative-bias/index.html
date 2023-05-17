@@ -6,8 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Nicholas Sliter">
+<meta name="dcterms.date" content="2023-05-16">
+<meta name="description" content="Auditing demographic bias in allocative ML models">
 
-<title>CS451 Course Blog – index</title>
+<title>CS451 Course Blog - Auditing Allocative Bias</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -172,12 +175,45 @@ background-size: cover;
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Auditing Allocative Bias</h1>
+                  <div>
+        <div class="description">
+          Auditing demographic bias in allocative ML models
+        </div>
+      </div>
+                </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Nicholas Sliter </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">May 16, 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
+
 
 
 
@@ -192,6 +228,8 @@ background-size: cover;
 <h1>Setup</h1>
 <p>Since I’m from Ohio, let’s pull the ACS data from Ohio. This will allow us to work with a smaller dataset.</p>
 <div class="cell" data-execution_count="19">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>STATE <span class="op">=</span> <span class="st">"OH"</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>data_source <span class="op">=</span> ACSDataSource(survey_year<span class="op">=</span><span class="st">'2018'</span>, </span>
@@ -199,13 +237,17 @@ background-size: cover;
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                            survey<span class="op">=</span><span class="st">'person'</span>)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>acs_data <span class="op">=</span> data_source.get_data(states<span class="op">=</span>[STATE], download<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <p>Now the <code>acs_data</code> has a lot of columns. We will only be using a few of them for this post.</p>
 <div class="cell" data-execution_count="20">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>possible_features<span class="op">=</span>[<span class="st">'AGEP'</span>, <span class="st">'SCHL'</span>, <span class="st">'MAR'</span>, <span class="st">'RELP'</span>, <span class="st">'DIS'</span>, <span class="st">'ESP'</span>, <span class="st">'CIT'</span>, <span class="st">'MIG'</span>, <span class="st">'MIL'</span>, <span class="st">'ANC'</span>, <span class="st">'NATIVITY'</span>, <span class="st">'DEAR'</span>, <span class="st">'DEYE'</span>, <span class="st">'DREM'</span>, <span class="st">'SEX'</span>, <span class="st">'RAC1P'</span>, <span class="st">'ESR'</span>]</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>predictor <span class="op">=</span> <span class="st">'PINCP'</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> acs_data[[<span class="op">*</span>possible_features, predictor]].copy()</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display" data-execution_count="20">
 
 <div>
@@ -363,12 +405,15 @@ background-size: cover;
 </ol>
 <p>We can answer these questions by looking at the <code>PINCP</code> column.</p>
 <div class="cell" data-execution_count="22">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>num_rows <span class="op">=</span> df.shape[<span class="dv">0</span>]</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"There are </span><span class="sc">{</span>num_rows<span class="sc">}</span><span class="ss"> individuals in the dataset."</span>)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>num_gt_50000 <span class="op">=</span> df[df[<span class="st">"PINCP"</span>] <span class="op">&gt;</span> <span class="dv">50000</span>].shape[<span class="dv">0</span>]</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"There are </span><span class="sc">{</span>num_gt_50000<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>((num_gt_50000<span class="op">/</span>num_rows)<span class="op">*</span><span class="dv">100</span>)<span class="sc">:.2f}</span><span class="ss">%) individuals with income greater than $50,000."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>There are 119086 individuals in the dataset.
 There are 23799 (19.98%) individuals with income greater than $50,000.</code></pre>
@@ -381,12 +426,15 @@ There are 23799 (19.98%) individuals with income greater than $50,000.</code></p
 </ol>
 <p>Let’s answer these questions. We will start by looking at the distribution of the <code>SEX</code> column. Then we will group by <code>SEX</code> and look at the distribution of the <code>PINCP</code> column.</p>
 <div class="cell" data-execution_count="23">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>sex_df <span class="op">=</span> df.copy()</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sex_df[<span class="st">"gt_50000"</span>] <span class="op">=</span> (sex_df[<span class="st">"PINCP"</span>] <span class="op">&gt;</span> <span class="dv">50000</span>)<span class="op">*</span><span class="dv">1</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>sex_df <span class="op">=</span> sex_df.groupby(<span class="st">"SEX"</span>).describe()[<span class="st">"gt_50000"</span>].reset_index()</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>sex_df[<span class="st">"num_gt_50000"</span>] <span class="op">=</span> sex_df.<span class="bu">apply</span>(<span class="kw">lambda</span> row: row[<span class="st">"count"</span>]<span class="op">*</span>row[<span class="st">"mean"</span>], axis<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>sex_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display" data-execution_count="23">
 
 <div>
@@ -442,6 +490,8 @@ There are 23799 (19.98%) individuals with income greater than $50,000.</code></p
 <p>This difference is very significant, while there are slightly more individuals of <code>SEX</code> 2 in our data, individuals of <code>SEX</code> 1 are almost 2x as likely to make more than $50,000. This is a very large difference and we should be concerned about it.</p>
 <p>Our data is clearly biased in terms of <code>SEX</code>. But as we know, bias can be exacerbated by intersectional identities. Let’s analyze the data against a combination of <code>SEX</code> and <code>RAC1P</code> (race).</p>
 <div class="cell" data-execution_count="24">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># intersectional analysis</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sex_df <span class="op">=</span> df.copy()</span>
@@ -454,6 +504,7 @@ There are 23799 (19.98%) individuals with income greater than $50,000.</code></p
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.barplot(data<span class="op">=</span>sex_df, x<span class="op">=</span><span class="st">"RAC1P"</span>, y<span class="op">=</span><span class="st">"mean"</span>, hue<span class="op">=</span><span class="st">"SEX"</span>)</span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="va">None</span> <span class="co"># suppress output</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <p><img src="index_files/figure-html/cell-9-output-1.png" class="img-fluid"></p>
 </div>
@@ -464,6 +515,8 @@ There are 23799 (19.98%) individuals with income greater than $50,000.</code></p
 <h1>Building our model</h1>
 <p>Now let’s construct a <code>BasicProblem</code> to predict our target variable <code>PINCP</code> (income) and threshold from our features.</p>
 <div class="cell" data-execution_count="25">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>features_to_use <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> possible_features <span class="cf">if</span> f <span class="kw">not</span> <span class="kw">in</span> [<span class="st">"SEX"</span>]]</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>EmploymentProblem <span class="op">=</span> BasicProblem(</span>
@@ -476,9 +529,12 @@ There are 23799 (19.98%) individuals with income greater than $50,000.</code></p
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>features, label, group <span class="op">=</span> EmploymentProblem.df_to_numpy(df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <p>Now we will construct a pipeline to scale the data, generate interaction features, drop features with low variance, and then build a logistic regression model with optimized hyperparameters (using <code>LogisticRegressionCV</code>).</p>
 <div class="cell" data-execution_count="26">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression, LogisticRegressionCV</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> make_pipeline</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler, PolynomialFeatures</span>
@@ -506,6 +562,7 @@ There are 23799 (19.98%) individuals with income greater than $50,000.</code></p
 <span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Train score:"</span>, model.score(X_train, y_train))</span>
 <span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Test score:"</span>, model.score(X_test, y_test))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Train score: 0.8408279800142755
 Test score: 0.84364766143253</code></pre>
@@ -530,6 +587,8 @@ Test score: 0.84364766143253</code></pre>
 <li><p>Overall false negative rate (FNR) and false positive rate (FPR)</p></li>
 </ol>
 <div class="cell" data-execution_count="27">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> precision_score, confusion_matrix</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">## Overall Measures</span></span>
@@ -544,6 +603,7 @@ Test score: 0.84364766143253</code></pre>
 <span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>tn, fp, fn, tp <span class="op">=</span> confusion_matrix(y_test, model.predict(X_test)).ravel()</span>
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model FNR is: </span><span class="sc">{</span>fn <span class="op">/</span> (fn <span class="op">+</span> tp)<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model FPR is: </span><span class="sc">{</span>fp <span class="op">/</span> (fp <span class="op">+</span> tn)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Overall model accuracy: 0.84364766143253
 Model PPV is: 0.632495164410058
@@ -558,6 +618,8 @@ Model FPR is: 0.06950614058008885</code></pre>
 <h2 class="anchored" data-anchor-id="group-measures">Group measures</h2>
 <p>Now let’s stratify our data by <code>SEX</code> and look at the above measures for each group.</p>
 <div class="cell" data-execution_count="28">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">## By-Group Measures</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">### What is the accuracy of your model on each subgroup? (Factors of SEX)</span></span>
@@ -610,6 +672,7 @@ Model FPR is: 0.06950614058008885</code></pre>
 <span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>max_diff_fpr <span class="op">=</span> np.<span class="bu">max</span>(fprs) <span class="op">-</span> np.<span class="bu">min</span>(fprs)</span>
 <span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max difference in FNR between subgroups is: </span><span class="sc">{</span>max_diff_fnr<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max difference in FPR between subgroups is: </span><span class="sc">{</span>max_diff_fpr<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Model accuracy on sex 1 is: 0.8189293361884369
 Model accuracy on sex 2 is: 0.8674133245491229
@@ -635,6 +698,8 @@ Max difference in FPR between subgroups is: 0.027503911954140668</code></pre>
 <li><p>Statistical parity</p></li>
 </ol>
 <div class="cell" data-execution_count="29">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bias Measures</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">### Is your model approximately calibrated?</span></span>
@@ -645,12 +710,15 @@ Max difference in FPR between subgroups is: 0.027503911954140668</code></pre>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>plt.plot(mean_predicted_value, fraction_of_positives, <span class="st">"s-"</span>)</span>
 <span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>plt.plot([<span class="dv">0</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">1</span>], <span class="st">"--"</span>, color<span class="op">=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <p><img src="index_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
 </div>
 </div>
 <p>Our model is approximately calibrated as seen in the above graph.</p>
 <div class="cell" data-execution_count="30">
+<details>
+<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Does your model satisfy approximate error rate balance?</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max difference in FNR between subgroups is: </span><span class="sc">{</span>max_diff_fnr<span class="sc">}</span><span class="ss">"</span>)</span>
@@ -676,6 +744,7 @@ Max difference in FPR between subgroups is: 0.027503911954140668</code></pre>
 <span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>max_diff <span class="op">=</span> np.<span class="bu">max</span>(proportion_positive) <span class="op">-</span> np.<span class="bu">min</span>(proportion_positive)</span>
 <span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max difference in proportion of positive predictions between subgroups is: </span><span class="sc">{</span>max_diff<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Max difference in FNR between subgroups is: 0.09109019604717256
 Max difference in FPR between subgroups is: 0.027503911954140668
