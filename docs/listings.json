@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/auditing-allocative-bias/index.html",
       "/posts/learning-from-timnit-gebru/index.html",
       "/posts/unsupervised-learning/index.html",
       "/posts/kernel-logistic-regression/index.html",
