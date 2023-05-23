@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.189">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2023-05-22">
+<meta name="description" content="Determining the quality of MiddCourses reviews using machine learning">
+
+<title>CS451 Course Blog - Classifying MiddCourses Reviews</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+<style>
+    .quarto-title-block .quarto-title-banner {
+      color: white;
+background-image: url(../../img/landscape.png);
+background-size: cover;
+    }
+    </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">CS451 Course Blog</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html">About</a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/Nicholas-Sliter"><i class="bi bi-github" role="img">
+</i> 
+ </a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/Nicholas_Sliter"><i class="bi bi-twitter" role="img">
+</i> 
+ </a>
+  </li>  
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Classifying MiddCourses Reviews</h1>
+                  <div>
+        <div class="description">
+          Determining the quality of MiddCourses reviews using machine learning
+        </div>
+      </div>
+                </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Nicholas Sliter, Aiden McMillan, Paul Choi </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">May 22, 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+<section id="abstract" class="level1">
+<h1>Abstract</h1>
+<p>We developed review quality classifiers based on text and metadata features from course reviews on MiddCourses, a student course evaluation site for Middlebury College. Using human annotation, split between 3 annotators, we determined the quality levels of reviews from a dataset of roughly 1,900 reviews. We fixed a annotation threshold such that our resulting binary labels (high and low review quality) were roughly equal. We then built and tested over 50 features and selected the top features based on their correlation with our quality labels and on the level of difference in the kernel density distribution of the feature when faceted by our quality label. We trained a logistic regression classifier on these engineered features and achieved an f1 score of about 0.75 for each class. We also trained XLNet, a transformer based, model on the text content of our reviews, achieving an f1 score of 0.65 for low-quality reviews and 0.72 for high-quality reviews.</p>
+<p>Our source code is available at <a href="https://github.com/Nicholas-Sliter/csci0451-final-project">https://github.com/Nicholas-Sliter/csci0451-final-project</a>.</p>
+</section>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>For most user-generated content (UGC) driven websites, the quality of the the content presented to other users is paramount to the success of the website. For example, on a site like YouTube, the quality of the videos that are recommended to users is a key factor in determining whether or not the user will continue to use the site. Sites that are overrun with spam or low-quality content are often abandoned by users in favor of sites that present less noise.</p>
+<p>MiddCourses is a website that allows Middlebury students to review courses that they have taken. The site is driven by UGC. And as we see in the previous example, the quality of the reviews that are shown to users is a key factor in determining whether or not the user will:</p>
+<ol type="1">
+<li><p>gain valuable information about the course they are interested in</p></li>
+<li><p>continue to use the site</p></li>
+<li><p>recommend the site to other users</p></li>
+</ol>
+<p>Creating a method to estimate the quality of a review on MiddCourses will allow better review curation and on-page sorting of reviews. This will allow users to more easily find the information they are looking for and increases the value of the site to users.</p>
+<p>Additionally, a method to identity low-quality reviews can reduce administrative burden on the site’s moderators. Currently, moderators manually review each review that is submitted to the site to check for prohibited content. This is a time-consuming process that could be made more efficient by using a classifier reduce the number of reviews that need to be manually reviewed.</p>
+<p>Our problem shares some similarities to the problem of spam detection but differs in key ways:</p>
+<ol type="1">
+<li><p>Low quality content is a superset of spam</p>
+<p>While spam is certainly low-quality, not all low-quality content is spam. For example, a review that provides little information about the course is low-quality but not spam.</p></li>
+<li><p>Existing filters remove most extremely low-quality content</p>
+<p>When reviews are submitted to MiddCourses they are sent through a verification pipeline that tries to determine if the review is spam or if it contains prohibited content. This pipeline is fairly effective at preventing extremely low-quality content from being posted to the site. The pipeline focuses on preventing the following types of content from being posted:</p>
+<ol type="1">
+<li>Reviews that are too long or too short</li>
+<li>Reviews that contain any profanity</li>
+<li>Reviews that contain junk characters (eg “asdfasdfa”)</li>
+<li>Reviews that are too self-similar (eg repeating the same phrase over and over)</li>
+<li>Reviews that don’t seem to be in English</li>
+<li>Reviews that contain padding to make the minimum character count</li>
+<li>Reviews that are copy-pasted from the course description</li>
+</ol>
+<p>While this does not explicitly filter out spam, the site’s incentives and authenticate structure provide little incentive to post commercial-type spam reviews. The site is not monetized and non-100-level reviews are not indexed by search engines. This, along with the requirement to have a Middlebury student email address, means that there is little incentive or ability to post spam reviews to the site. And given the authentication requirement, users who post spam reviews can be easily identified and banned from the site.</p>
+<p>This means that the remaining low-quality reviews do not contain the same types of content that are typically found in spam. This means that we cannot use the same methods that are used to detect spam to detect these reviews.</p>
+<p>These remaining low-quality reviews are typically low-quality for one of the following reasons:</p>
+<ol type="1">
+<li><strong>Low-Effort Reviews</strong>: characterized by a lack of detail and a lack of information about the course</li>
+<li><strong>Fraudulent Reviews</strong>: characterized by randomness and a lack of coherence</li>
+<li><strong>Hyperbolic Reviews</strong>: characterized by excessive polarity and a limited perspective</li>
+</ol></li>
+</ol>
+<p>This means our problem is isomorphic to a review helpfulness prediction problem, not a spam detection task.</p>
+<section id="related-work" class="level2">
+<h2 class="anchored" data-anchor-id="related-work">Related Work</h2>
+<p>We started our research by looking at existing work on review helpfulness prediction. We found that there are two main approaches to this problem:</p>
+<ol type="1">
+<li><strong>Metadata-based</strong>: uses metadata and computed features to predict helpfulness <span class="citation" data-cites="du2019feature singh2017singh mauro2021user liu2007low">(<a href="#ref-du2019feature" role="doc-biblioref">Du et al. 2019</a>; <a href="#ref-singh2017singh" role="doc-biblioref">Singh et al. 2017</a>; <a href="#ref-mauro2021user" role="doc-biblioref">Mauro, Ardissono, and Petrone 2021</a>; <a href="#ref-liu2007low" role="doc-biblioref">Liu et al. 2007</a>)</span></li>
+<li><strong>Text-based</strong>: uses NLP-based methods or deep learning on review text to predict helpfulness <span class="citation" data-cites="9416474 salminen2022creating 8288877">(<a href="#ref-9416474" role="doc-biblioref">Mohawesh et al. 2021</a>; <a href="#ref-salminen2022creating" role="doc-biblioref">Salminen et al. 2022</a>; <a href="#ref-8288877" role="doc-biblioref">Lubis, Rosmansyah, and Supangkat 2017</a>)</span></li>
+</ol>
+</section>
+</section>
+<section id="values-statement" class="level1">
+<h1>Values Statement</h1>
+<p>Our project has direct implications for the MiddCourses website. It will impact users on 3 levels:</p>
+<ol type="1">
+<li><p><strong>Users who are looking for information about a course</strong>:</p>
+<p>Our project aims to allow users to more easily find the valuable information they are searching for. This will increase the value of the site to users and increase the likelihood that they will continue to use the site and recommend it to other users.</p>
+<p>Nevertheless, if types of bias are introduced into the model, it could have a negative impact on these users. For example, if the model is biased against reviews that are written by non-native English speakers, those opinions would be less likely to be shown to users. This systematic de-ranking would be a negative outcome for users who share similar characteristics.</p>
+<p>This impact is partial mitigated by the fact that the model will only used to sort reviews on the page. Users can still see all reviews by scrolling down the page. However, this means a user’s first impression of a course will be impacted by the model’s predictions.</p></li>
+<li><p><strong>Users who are writing reviews</strong>:</p>
+<p>For users who are writing reviews, our project will have a direct impact on their experience. If a user’s review is flagged as low-quality, it may be subject to additional scrutiny by the site’s moderators. This could lead to an increased chance that the review is removed.</p>
+<p>Additionally, if the model is used to sort reviews on the page, the user’s review may be less likely to be seen by other users. This may lead to a decreased sense of value for the user and may lead to them using the site less frequently.</p>
+<p>Conversely, if a user’s review is flagged as high-quality, it may be more likely to be seen by other users. This may lead to an increased sense of value for the user and may lead to them using the site more frequently.</p>
+<p>Since MiddCourses does not offer analytics of reviews to users, this impact is largely mitigated. Users would only be able to infer the impact of the model on their reviews based on the position of their review on the page. But even this is not a perfect indicator since review sorting takes into account other factors such as the date the review was posted and the number of user votes the review has received.</p></li>
+<li><p><strong>Instructors who are being reviewed</strong>:</p>
+<p>Instructors face the largest potential for harm from our project. MiddCourses, like other review sites, is a controversial topic among instructors. On one hand, it allows them to get feedback from students and improve their courses. On the other hand, it allows students to publicly criticize them and their courses.</p>
+<p>These sites are well-known in the literature for being biased against women, people of color, and non-native English speakers. This bias is often due to the fact that these groups are more likely to be criticized for their teaching style and communication skills. Or due to discrimination against these groups and the perception that they are less qualified to teach.</p>
+<p>Our project has the potential to exacerbate this bias. Given the likelihood of biased training data since the model will be trained on real reviews, it is possible for the model to learn these biases. A biased model would look like one which promotes biased reviews with a higher probability compared to unbiased reviews.</p>
+<p>If these biases exist in the reviews, it is likely that features like word choice and overall rating will be influenced by these biases.</p>
+<p>At the model-level, we can try and mitigate these biases by not training directly from these features. Instead, we will try and build second-order features that are not directly influenced by these biases. For example, we can try and build features that are based on the sentiment of the review rather than the words used in the review. This will allow us to capture the sentiment of the review without being overly-influenced by the word choice.</p>
+<p>Additionally, we use a triple-annotation method to hopefully reduce the impact of biased reviews on the model. This method allows us to downvote reviews that are flagged as biased by the annotators. This let’s us identify egregious cases of bias but may miss subtle cases of bias.</p>
+<p>If the model is used to sort reviews on a course page, reviews about an instructor may be more or less likely to be seen by users. This may cause inflated or deflated perception of said instructor from student perspectives. This, in turn, may impact course enrollment and instructor evaluations.</p>
+<p>Early review bias also influences the impact of the model on instructors. If the first reviews about an instructor are biased and are treated as high-quality by the model, it may influence the perception of the instructor for future students. This may lead to a feedback loop where the instructor is perceived as being better (or worse) than they actually are.</p>
+<p>With this in mind, we worry about feedback loops in reviews (poisoning the well) where early reviews influence later reviews. Given our model’s interaction with how reviews are presented to users, we must consider these multi-order effects. We attempt to mitigate the feedback loop in two ways:</p>
+<ol type="1">
+<li><p>We use a time-decay factor in the review sorting algorithm. This means that reviews that are posted closer to the current date will be ranked higher than older reviews.</p></li>
+<li><p>New users are not able to see reviews until they have submitted 2 of their own reviews in the previous 6 months. This helps to ensure that users are not influenced by existing reviews when writing their own reviews.</p></li>
+</ol>
+<p>With a biased model, instructors could be presented with negative or positive bias.</p>
+<p>Negative bias against instructors has a higher potential for harm than positive bias. This is because negative bias can lead to a feedback loop where instructors are perceived as being worse than they actually are. This can lead to lower enrollment in their courses and lower instructor evaluations. This, in turn, can lead to lower pay and less job security for instructors. This is especially true for instructors who are not tenured or who are on the tenure track. We also worry about the emotional impact of unfair criticism on instructors. This can lead to increased stress and anxiety for instructors. This can lead to a negative impact on their mental health and their ability to teach effectively.</p>
+<p>At the review sorting level, negative bias is partially mitigated by a hardcoded bias for positive reviews. This means that reviews with a positive overall rating will be ranked higher than reviews with a negative overall rating. The intention of this choice is to shift bias towards the less-harmful positive direction.</p>
+<p>Positive bias, on the other hand, primarily negatively impacts students. While positive bias can certainly unfairly aid an instructor, its impact is felt by the students who choose said instructor because of the biased review and have a worse experience than what they expected.</p>
+<p>There is a large potential for harm here and we must be careful not to exacerbate existing biases. There is the potential for large-scale feedback loops if our model is biased. And certainly we see pathways to real-world harm.</p></li>
+</ol>
+<p>Overall, we believe that our model will make the world (Middlebury) a better place. By identifying high and low quality reviews on MiddCourses we hope to make it easier for Middlebury students to find high quality information on the courses they are searching for. And therefore improve their ability to find courses they will enjoy. This belief assumes that:</p>
+<ol type="1">
+<li><p>Higher quality reviews lead to better outcomes for students.</p></li>
+<li><p>Our classification of reviews is fair and does not unduly discriminate or disadvantage specific groups of students.</p></li>
+</ol>
+<p>As you can see, our primary focus is on the impact of our model on students. This is because students are the primary users of MiddCourses. And therefore the primary beneficiaries of our model. We believe that our model will have a positive impact on students by making it easier for them to find high quality information on the courses they are searching for. This will allow them to make better decisions about which courses to take and therefore improve their experience at Middlebury.</p>
+</section>
+<section id="material-and-methods" class="level1">
+<h1>Material and Methods</h1>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>We used fully anonymous (user-unaware) data from MiddCourses of reviews submitted prior to <code>2023-04-21 18:09:01.856+00</code>. This data was provided to us by the MiddCourses team. The SQL query used to gather the data is available on GitHub in the code repository.</p>
+<p>Each row represents a review of a course-instructor pair.</p>
+<p>A full datasheet is available at <a href="https://github.com/Nicholas-Sliter/middcourses2#review-structure">https://github.com/Nicholas-Sliter/middcourses2#review-structure</a>.</p>
+<section id="limitations" class="level3">
+<h3 class="anchored" data-anchor-id="limitations">Limitations</h3>
+<p>The review data is UGC (user-generated content) and therefore has the following limitations:</p>
+<ol type="1">
+<li><p><strong>Response Bias</strong>: The data is biased towards users who are more likely to leave reviews. This means that the data is not representative of the entire population of Middlebury students. This is a common problem with UGC and is difficult to mitigate.</p></li>
+<li><p><strong>Extremity Bias</strong>: As review data, MiddCourses reviews exhibit extremity bias. This means that reviews are more likely to be either very positive or very negative. This is a well-known problem with review data and is difficult to mitigate.</p></li>
+<li><p><strong>Acquiescence Bias</strong>: Reviewers may feel pressured to leave a positive review for a course or instructor. This is especially true for courses and instructors that are well-liked.</p></li>
+</ol>
+<p>Reviewers may also feel compelled to leave reviews due to the incentive structure of the site. These reviews may not exhibit an accurate representation of the course or instructor. Indeed, it is these reviews that we want to identify and de-rank.</p>
+</section>
+</section>
+<section id="approach" class="level2">
+<h2 class="anchored" data-anchor-id="approach">Approach</h2>
+<p>We approached the problem by conducting experiments with feature engineering and NLP methods to identify a set of features that would effectively classify reviews based on quality. On top of that, we trained our data on a deep language model (XLNet) to compare those results to the results of our own feature engineering. Our objective was to design a classification model that most accurately predicted review quality based on the input data.</p>
+<p style="text-align:center;">
+<img src="images/process.png" width="500">
+</p>
+<p>To begin, we performed triple-annotation on the entire dataset using an annotation tool (midd.courses/annotate) and transformed the annotations into classification labels based on a certain threshold. Since there were no inherent labels for review quality, we relied on annotations as the ground truth. Recognizing the subjectivity of this process, we each individually annotated the data to mitigate bias.</p>
+<p style="text-align:center;">
+<img src="images/review_example.png" width="500"><br><i>Example of a review on the annotation tool</i>
+</p>
+<p>In order to ensure that our annotations were consistent, we created an annotation rubric. The rubric gave us a rough idea of whether to give the annotation a thumbs up (+1), thumbs down (-1), or leave it blank (0):</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Great review (+1)</th>
+<th>Ok review (+0)</th>
+<th>Bad review (-1)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Text consistent with sliders</td>
+<td>Text mostly consistent with sliders</td>
+<td>Text is not consistent with sliders</td>
+</tr>
+<tr class="even">
+<td>Text is well written</td>
+<td>Text is well written</td>
+<td>Text is difficult to read</td>
+</tr>
+<tr class="odd">
+<td>Gives a balanced picture of the course</td>
+<td>Gives a limited perspective on the course (e.g.&nbsp;only negative)</td>
+<td>Gives a very limited perspective on the course (e.g.&nbsp;hyperbolically negative)</td>
+</tr>
+<tr class="even">
+<td>Text offers valuable information not found in the sliders and other questions</td>
+<td>Text does not offer much information about the course not found in the sliders and other questions</td>
+<td>Text is irrelevant to the course or contains irrelevant meta information (e.g.&nbsp;personal information, spam, padding to make character count, etc)</td>
+</tr>
+</tbody>
+</table>
+<p>This rubric gave us a consistent guideline by which to score the reviews. Once the annotations were complete, each review received a vote score which was the sum of the annotation values. We then decided on the threshold of 0 to create our target vector <span class="math inline">\(y\)</span>. Any review below this threshold received an <code>imputed quality</code> of 0 (indicating lower quality) and any review above the threshold received an <code>imputed quality</code> of 1.</p>
+<section id="metadata-based-approach-feature-engineering-logistic-regression" class="level3">
+<h3 class="anchored" data-anchor-id="metadata-based-approach-feature-engineering-logistic-regression">Metadata-based approach (Feature Engineering &amp; Logistic Regression):</h3>
+<p>For the initial model, we engineered features using both the textual content of the reviews and the non-textual metadata associated with each review. This process entailed brainstorming and developing the features, evaluating their correlation with the <code>imputed_quality</code> (our target vector), and assessing the intercorrelation among the features to mitigate multicollinearity. We then chose the highest performing features and ran them through a linear regression model.</p>
+<p>The list below shows all of the features we selected for our classification task.</p>
+<p><strong>Metadata-based:</strong></p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Description</th>
+<th>Qual./Quant.</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>default_mse</code></td>
+<td>Mean squared error between default slider values and the slider values of the review</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>overly_negative_mse</code></td>
+<td>Mean squared error between overly negative slider values and the slider values of the review</td>
+<td>quant.</td>
+</tr>
+<tr class="odd">
+<td><code>rating_diff</code></td>
+<td>Difference between the default value of the rating slider and the value of the rating slider for the review</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>wasAuthorized</code></td>
+<td>User had authorization to view other reviews at the time they submitted their review</td>
+<td>qual.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Text-based:</strong></p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Description</th>
+<th>Qual./Quant.</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>default_mse</code></td>
+<td>Mean squared error between default slider values and the slider values of the review</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>overly_negative_mse</code></td>
+<td>Mean squared error between overly negative slider values and the slider values of the review</td>
+<td>quant.</td>
+</tr>
+<tr class="odd">
+<td><code>rating_diff</code></td>
+<td>Difference between the default value of the rating slider and the value of the rating slider for the review</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>content_larger_than_250</code></td>
+<td>Text contains more than 250 characters</td>
+<td>qual.</td>
+</tr>
+<tr class="odd">
+<td><code>content_length</code></td>
+<td>Number of characters in text (normalized)</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>number_count</code></td>
+<td>Number of numbers in text</td>
+<td>quant.</td>
+</tr>
+<tr class="odd">
+<td><code>mentions_prof_word</code></td>
+<td>Text mentions any word related to “professor”</td>
+<td>qual.</td>
+</tr>
+<tr class="even">
+<td><code>contains_pronouns</code></td>
+<td>Text contains pronouns</td>
+<td>qual.</td>
+</tr>
+<tr class="odd">
+<td><code>contains_personal_pronouns</code></td>
+<td>Text contains personal pronouns</td>
+<td>qual.</td>
+</tr>
+<tr class="even">
+<td><code>average_sentence_length</code></td>
+<td>Average length of sentence in text</td>
+<td>quan.</td>
+</tr>
+<tr class="odd">
+<td><code>fre_readability</code></td>
+<td>Flesch Reading Ease, a formula that measures the text readability (from 0-100) based on the average length of your sentences (measured by the number of words) and the average number of syllables per word</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>smog_readability</code></td>
+<td>SMOG index, a readability formula that assesses the “grade-level” of text based on the number of polysyllabic words</td>
+<td>quant.</td>
+</tr>
+<tr class="odd">
+<td><code>dale_chall_readability</code></td>
+<td>Dale-Chall readability formula, a method used to determine the approximate “grade-level” of a text based on sentence length and the number of “hard” words</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>entropy</code></td>
+<td>Shannon entropy based on the frequency of each character in the text</td>
+<td>quant.</td>
+</tr>
+<tr class="odd">
+<td><code>word_entropy</code></td>
+<td>Shannon entropy based on the frequency of each word in the text</td>
+<td>quant.</td>
+</tr>
+<tr class="even">
+<td><code>sentiment_scores</code></td>
+<td>Sentiment scores calculated using <code>vaderSentiment</code>’s <code>SentimentIntensityAnalyzer</code></td>
+<td>quant.</td>
+</tr>
+<tr class="odd">
+<td><code>neutrality_scores</code></td>
+<td>Neutrality scores calculated using <code>vaderSentiment</code>’s <code>SentimentIntensityAnalyzer</code></td>
+<td>quant.</td>
+</tr>
+</tbody>
+</table>
+<p>Finally, we also included as a feature a vectorized version of the text. The vectorizer applies TF-IDF (Term Frequency-Inverse Document Frequency) weighting to prioritize important words while filtering out common and less informative ones, using specified parameters such as maximum features, maximum document frequency, minimum document frequency, and a set of English stop words.</p>
+<p>In order to select the best features, we looked at the coorelation between features and <code>imputed_quality</code> and feature intercoorelation. Furthermore, we looked at density plots to discover quantitative features that caused different distributions for reviews with differing <code>imputed_quality</code>.</p>
+<p style="text-align:center;">
+<img src="images/density_plots.png" width="500"><br><i>Density plots for two features of varying quality</i>
+</p>
+<p style="text-align:center;">
+<img src="images/correlation.png" width="500"><br><i>Correlation matrix of our selected features</i>
+</p>
+</section>
+<section id="text-based-approach-xlnet" class="level3">
+<h3 class="anchored" data-anchor-id="text-based-approach-xlnet">Text-based approach (XLNet):</h3>
+<p>In an attempt to achieve better results, we also experimented with using a deep model to classify reviews. While exploring the possible options for deep NLP, we came across multiple sequence-in architectures such as Recurrent Neural Networks (RNNs), Long-Short Term Memory (LSTM) and Gated Recurrent Units (GRU). Eventually we decided to implement the Transformer architecture, one of the most prominent recent advancements in deep learning.</p>
+<p>In a 2017 paper titled “<a href="https://arxiv.org/abs/1706.03762">Attention is All You Need</a>,” the the Transformer architecture was proposed by a team led by Ashish Vaswami <span class="citation" data-cites="vaswani2017attention">(<a href="#ref-vaswani2017attention" role="doc-biblioref">Vaswani et al. 2017</a>)</span>. It has since become the go-to method for a wide range of NLP tasks and it’s probably most well known for its use in GPT-3.</p>
+<p>Unlike previous NLP approaches that often relied on encoder-decoder recurrent neural networks (RNNs) for sequence modeling, the Transformer architecture introduced an attention mechanism between the encoder and decoder <span class="citation" data-cites="Cristina_2023a">(<a href="#ref-Cristina_2023a" role="doc-biblioref">Cristina 2023b</a>)</span>. Attention is a method that allows the neural network to focus on only the most important parts of the input sequence. Furthermore, it eliminates the issue of diminishing gradients found when using RNNs. In other words, accuracy does not drop when the number of inputs in the sequence increases.</p>
+<p style="text-align:center;">
+<img src="images/rnn.png" width="500"><br><i>Typical sequence-in sequence-out RNN with encoder and decoder <br>from “<a href="https://arxiv.org/abs/1409.3215">Sequence to Sequence Learning with Neural Networks</a>”</i>
+</p>
+<p style="text-align:center;">
+<img src="images/attention.png" width="500"><br><i>Encoder decoder with attention <br>from “<a href="https://www.frontiersin.org/articles/10.3389/fncom.2020.00029/full">Attention in Psychology, Neuroscience, and Machine Learning</a>”</i>
+</p>
+<p>By using self-attention mechanisms, the Transformer architecture avoids the sequential nature of RNNs, making it highly parallelizable and quickly optimizable (through backpropagation). It therefore trains very efficiently on parallel processors like GPUs <span class="citation" data-cites="Cristina_2023a">(<a href="#ref-Cristina_2023a" role="doc-biblioref">Cristina 2023b</a>)</span>.</p>
+<p style="text-align:center;">
+<img src="images/transformer.png" width="250"><br><i>Full transformer model <br>from “<a href="https://arxiv.org/abs/1706.03762">Attention is All You Need</a>”</i>
+</p>
+<p>Our specific model utilizes XLNet. XLNet is an open-source Transformer architecture that has been pre trained using permutation-based autoregressive training to address limitations of the traditional autoregressive models, mainly the lack of bidirectional context <span class="citation" data-cites="yang2020xlnet Cristina_2023">(<a href="#ref-yang2020xlnet" role="doc-biblioref">Yang et al. 2020</a>; <a href="#ref-Cristina_2023" role="doc-biblioref">Cristina 2023a</a>)</span>. This modification enables XLNet to better capture bidirectional context, leading to improved performance on several NLP tasks.</p>
+<p>We accessed XLNet through <a href="https://github.com/ThilinaRajapakse/simpletransformers">SimpleTransformers</a> based on the <a href="https://github.com/huggingface/transformers">Transformers</a> library by HuggingFace. This allowed us to quickly implement the Transformer architecture and then tune the parameters to figure out the best outcomes. We created the model to take in text as a sequence of words (which are embedded) and then output either 0 or 1 as the predicted <code>imputed_quality</code>. We also trained only the final layer of the model.</p>
+<p>Simple transformers documentation: <a href="https://simpletransformers.ai/docs/installation/" class="uri">https://simpletransformers.ai/docs/installation/</a></p>
+<p>Further reading on Transformer architecture: - <a href="https://machinelearningmastery.com/a-tour-of-attention-based-architectures/" class="uri">https://machinelearningmastery.com/a-tour-of-attention-based-architectures/</a> - <a href="https://machinelearningmastery.com/the-transformer-model/" class="uri">https://machinelearningmastery.com/the-transformer-model/</a></p>
+</section>
+</section>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p style="text-align:center;">
+<img src="images/lr_results.png" width="500"><br><i>Results using Logistic Regression (i.e.&nbsp;hand-engineered features)</i>
+</p>
+<p style="text-align:center;">
+<img src="images/xlnet_results.png" width="500"><br><i>Results using XLNet</i>
+</p>
+<!-- <p style="text-align:center;"><img src="images/reviews.png" width="500"><br><i>Good reviews classified as 1's and others as 0's</i></p> -->
+<p>Comparing the first and second images, using the hand-engineered features led to a better accuracy. We can conclude that the engineered features were more accurate using the F1 score. F1 score measures the accuracy of a model and is calculated using the equation,</p>
+<p><span class="math inline">\(F_{1} = 2 \times \frac{precision \ \times \ recall}{precision \ + \ recall}\)</span></p>
+<p>where precision is what proportion of our positive predictions are correct and recall is what proportion of actual positives are identified. The second image shows the classification of the quality of reviews. Based on the threshold for imputed_quality, any review with a score greater than 0 (annotation points) was labeled as a “1”. Other reviews that did not meet this requirement would be labeled as a “0”.</p>
+<p>We believe that our results from the hand-engineered features may have worked better than the XLNet method due to the size of our data. Deep models generally work better with a larger data set and because we were working with a small dataset and there were only three annotators, it made it harder to find a pattern in the reviews. In addition, since XLNet was pre-trained it may not have worked well with classifying reviews based on quality in our case.</p>
+</section>
+<section id="concluding-discussion" class="level1">
+<h1>Concluding Discussion</h1>
+<p>We defined a “full success” in our project proposal to be:</p>
+<ul>
+<li>feature pipeline and classifier implemented in production on MiddCourses</li>
+<li>annotated data</li>
+<li>feature pipeline in Python</li>
+<li>classifiers in Python</li>
+<li>notebook that explores the model</li>
+</ul>
+<p>We achieved a partial success by implementing all goals excluding running our model in production on MiddCourses. Due to dependency issues, deploying the model in production would require developing libraries for important features from scratch or dropping those features. Either case in unacceptable. In the first case, it is out of scope and prohibitively difficult to develop the libraries we would need. In the second case, we would be dropping important features that would decrease the accuracy of our model to unacceptable levels.</p>
+<p>In addition, our model’s performance is okay but not great. Due to this, we are apprehensive about deploying the model. We believe that over time with more data and more annotations, the model will improve. However, we do not have the time to wait for this improvement for this project.</p>
+<p>Our results were interesting as we found many of the features that are lauded in our cited works were not very useful with our data. This indicates that there are structural differences between our problem of review quality classification on MiddCourses reviews as compared to the papers that mostly focus on Amazon reviews.</p>
+</section>
+<section id="group-contributions" class="level1">
+<h1>Group Contributions</h1>
+<section id="nicholas" class="level2">
+<h2 class="anchored" data-anchor-id="nicholas">Nicholas</h2>
+<p>I worked on much of the feature engineering for the metadata-based model. I also worked on the data collection and annotation, building the annotation tool on MiddCourses and providing the data. For the final report, I worked on the abstract, introduction, values-statement, and part of the methods sections.</p>
+</section>
+<section id="paul" class="level2">
+<h2 class="anchored" data-anchor-id="paul">Paul</h2>
+<p>I worked on annotating the reviews on MiddCourses website and finding ways to measure lexical richness using a Python module called LexicalRichness. For the final report I worked on the results in addition to parts of the conclusion.</p>
+</section>
+<section id="aidan" class="level2">
+<h2 class="anchored" data-anchor-id="aidan">Aidan</h2>
+<p>I worked on researching deep NLP methods and implementing and fine-tuning the XLnet. I also annotated the reviews and helped out a little with the feature engineering. For the final report I wrote both the metadata and text-based part of the approach section.</p>
+</section>
+</section>
+<section id="personal-reflection" class="level1">
+<h1>Personal Reflection</h1>
+<p>In our research and implementations I learned about text classification methods, text quality and review helpfulness prediction, and the manual annotation process. I feel good about our achievements. While I wish we had a stronger model, I am happy with the work we did and the knowledge we gained. I found it very interesting how domain specific review quality prediction is and how many of the engineered features that work in our citied papers are very weak in our domain. I also found it interesting how much of a difference the manual annotation process makes. I think that if we had more time to annotate more reviews and more annotators, we would have a much stronger model.</p>
+<p>While we did not implement the model in production due to the above mentioned constraints, I am happy about our progress. I can always implement a similar model later. With additional data and annotations, we can return at a later date to implement a production model.</p>
+<p>I plan to continue working on this problem on MiddCourses as it is as of yet unresolved. I will continue to try new features and try to find the mythical feature that perfectly separates the classes.</p>
+</section>
+<section id="references" class="level1">
+
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-Cristina_2023" class="csl-entry" role="doc-biblioentry">
+Cristina, Stefania. 2023a. <span>“A Tour of Attention-Based Architectures.”</span> <a href="https://machinelearningmastery.com/a-tour-of-attention-based-architectures/">https://machinelearningmastery.com/a-tour-of-attention-based-architectures/</a>.
+</div>
+<div id="ref-Cristina_2023a" class="csl-entry" role="doc-biblioentry">
+———. 2023b. <span>“The Transformer Model.”</span> <a href="https://machinelearningmastery.com/the-transformer-model/">https://machinelearningmastery.com/the-transformer-model/</a>.
+</div>
+<div id="ref-du2019feature" class="csl-entry" role="doc-biblioentry">
+Du, Jiahua, Jia Rong, Sandra Michalska, Hua Wang, and Yanchun Zhang. 2019. <span>“Feature Selection for Helpfulness Prediction of Online Product Reviews: An Empirical Study.”</span> <em>PloS One</em> 14 (12): e0226902.
+</div>
+<div id="ref-liu2007low" class="csl-entry" role="doc-biblioentry">
+Liu, Jingjing, Yunbo Cao, Chin-Yew Lin, Yalou Huang, and Ming Zhou. 2007. <span>“Low-Quality Product Review Detection in Opinion Summarization.”</span> In <em>Proceedings of the 2007 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning (EMNLP-CoNLL)</em>, 334–42.
+</div>
+<div id="ref-8288877" class="csl-entry" role="doc-biblioentry">
+Lubis, Fetty Fitriyanti, Yusep Rosmansyah, and Suhono Harso Supangkat. 2017. <span>“Improving Course Review Helpfulness Prediction Through Sentiment Analysis.”</span> In <em>2017 International Conference on ICT for Smart Society (ICISS)</em>, 1–5. <a href="https://doi.org/10.1109/ICTSS.2017.8288877">https://doi.org/10.1109/ICTSS.2017.8288877</a>.
+</div>
+<div id="ref-mauro2021user" class="csl-entry" role="doc-biblioentry">
+Mauro, Noemi, Liliana Ardissono, and Giovanna Petrone. 2021. <span>“User and Item-Aware Estimation of Review Helpfulness.”</span> <em>Information Processing &amp; Management</em> 58 (1): 102434.
+</div>
+<div id="ref-9416474" class="csl-entry" role="doc-biblioentry">
+Mohawesh, Rami, Shuxiang Xu, Son N. Tran, Robert Ollington, Matthew Springer, Yaser Jararweh, and Sumbal Maqsood. 2021. <span>“Fake Reviews Detection: A Survey.”</span> <em>IEEE Access</em> 9: 65771–802. <a href="https://doi.org/10.1109/ACCESS.2021.3075573">https://doi.org/10.1109/ACCESS.2021.3075573</a>.
+</div>
+<div id="ref-salminen2022creating" class="csl-entry" role="doc-biblioentry">
+Salminen, Joni, Chandrashekhar Kandpal, Ahmed Mohamed Kamel, Soon-gyo Jung, and Bernard J Jansen. 2022. <span>“Creating and Detecting Fake Reviews of Online Products.”</span> <em>Journal of Retailing and Consumer Services</em> 64: 102771.
+</div>
+<div id="ref-singh2017singh" class="csl-entry" role="doc-biblioentry">
+Singh, Irani et al. 2017. <span>“Singh JP, Irani s., Rana NP, Dwivedi YK, Saumya s., Roy PK.”</span> <em>Predicting the <span>“Helpfulness”</span> of Online Consumer Reviews, Journal of Business Research</em> 70: 346–55.
+</div>
+<div id="ref-vaswani2017attention" class="csl-entry" role="doc-biblioentry">
+Vaswani, Ashish, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. <span>“Attention Is All You Need.”</span> <a href="https://arxiv.org/abs/1706.03762">https://arxiv.org/abs/1706.03762</a>.
+</div>
+<div id="ref-yang2020xlnet" class="csl-entry" role="doc-biblioentry">
+Yang, Zhilin, Zihang Dai, Yiming Yang, Jaime Carbonell, Ruslan Salakhutdinov, and Quoc V. Le. 2020. <span>“XLNet: Generalized Autoregressive Pretraining for Language Understanding.”</span> <a href="https://arxiv.org/abs/1906.08237">https://arxiv.org/abs/1906.08237</a>.
+</div>
+</div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
